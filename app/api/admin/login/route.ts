@@ -15,19 +15,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
 
+    const forwardedProto = req.headers.get("x-forwarded-proto");
+    const isHttps = req.nextUrl.protocol === "https:" || forwardedProto === "https";
+
     const response = NextResponse.json({ success: true, message: "Logged in successfully." });
 
     response.cookies.set("admin_token", session.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps,
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
       sameSite: "lax",
     });
 
-    response.cookies.set("admin_email", session.user.email || email.trim(), {
+    response.cookies.set("admin_email", session.user?.email || email.trim(), {
       httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps,
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
       sameSite: "lax",

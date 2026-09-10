@@ -44,8 +44,8 @@ function LoginForm() {
           safeTarget = nextParam;
         }
 
-        router.push(safeTarget);
-        router.refresh();
+        // Hard navigation ensures browser sends fresh cookies on first request and eliminates client-side navigation stalls
+        window.location.href = safeTarget;
       } else {
         toast.error(data.error || "ভুল ইমেইল বা পাসওয়ার্ড");
         setLoading(false);
