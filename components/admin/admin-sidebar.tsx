@@ -140,6 +140,7 @@ export function AdminSidebar({
               width={22}
               height={22}
               className="object-contain brightness-0 invert"
+              unoptimized
             />
           </div>
           <div>

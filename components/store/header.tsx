@@ -68,15 +68,19 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
             </div>
 
             <div className="flex-1 flex justify-center">
-              <Link href="/" className="flex items-center justify-center">
+              <Link href="/" className="flex items-center gap-2 group">
                 <Image
                   src="/brand/logo.webp"
                   alt="CanvasBag Logo"
-                  width={140}
-                  height={40}
-                  className="h-9 w-auto object-contain"
+                  width={36}
+                  height={36}
+                  className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
                   priority
+                  unoptimized
                 />
+                <span className="text-lg font-black tracking-tight text-slate-900 group-hover:text-[#ff6b35] transition-colors">
+                  Canvas<span className="text-[#ff6b35]">Bag</span>
+                </span>
               </Link>
             </div>
 
@@ -99,15 +103,19 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
 
           {/* Desktop Header Row 1 */}
           <div className="hidden md:flex items-center justify-between h-16 gap-6">
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 group">
               <Image
                 src="/brand/logo.webp"
                 alt="CanvasBag Logo"
-                width={140}
-                height={40}
-                className="h-9 w-auto object-contain"
+                width={38}
+                height={38}
+                className="h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
                 priority
+                unoptimized
               />
+              <span className="text-xl font-black tracking-tight text-slate-900 group-hover:text-[#ff6b35] transition-colors">
+                Canvas<span className="text-[#ff6b35]">Bag</span>
+              </span>
             </Link>
 
             {/* Desktop Search */}
@@ -273,13 +281,23 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
           <div className="relative w-4/5 max-w-sm bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-300">
             {/* Drawer Header */}
             <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-              <Image
-                src="/brand/logo.webp"
-                alt="CanvasBag Logo"
-                width={120}
-                height={36}
-                className="h-8 w-auto object-contain"
-              />
+              <Link
+                href="/"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-2 group"
+              >
+                <Image
+                  src="/brand/logo.webp"
+                  alt="CanvasBag Logo"
+                  width={32}
+                  height={32}
+                  className="h-7 w-auto object-contain transition-transform group-hover:scale-105"
+                  unoptimized
+                />
+                <span className="text-lg font-black tracking-tight text-slate-900 group-hover:text-[#ff6b35] transition-colors">
+                  Canvas<span className="text-[#ff6b35]">Bag</span>
+                </span>
+              </Link>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}

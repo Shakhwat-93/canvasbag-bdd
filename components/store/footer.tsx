@@ -20,14 +20,18 @@ export function Footer({ categories = [], settings = {} }: FooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Col 1: Brand & Social */}
           <div>
-            <Link href="/" className="inline-block mb-4">
+            <Link href="/" className="inline-flex items-center gap-2.5 mb-4 group">
               <Image
                 src="/brand/logo.webp"
                 alt="CanvasBag Logo"
-                width={140}
-                height={40}
-                className="h-9 w-auto object-contain"
+                width={36}
+                height={36}
+                className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
+                unoptimized
               />
+              <span className="text-xl font-black tracking-tight text-slate-900 group-hover:text-[#ff6b35] transition-colors">
+                Canvas<span className="text-[#ff6b35]">Bag</span>
+              </span>
             </Link>
             <p className="text-sm leading-relaxed mb-4 text-gray-500">
               বাংলাদেশের বিশ্বস্ত ক্যানভাস ব্যাগ শপ। সেরা মানের পণ্য, সর্বোত্তম দাম এবং দ্রুততম ক্যাশ অন ডেলিভারি।

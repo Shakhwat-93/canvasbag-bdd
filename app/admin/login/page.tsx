@@ -69,6 +69,7 @@ function LoginForm() {
               width={28}
               height={28}
               className="object-contain brightness-0 invert"
+              unoptimized
             />
           </span>
           <h1 className="text-xl font-black uppercase tracking-widest text-slate-900">CanvasBag Admin</h1>
