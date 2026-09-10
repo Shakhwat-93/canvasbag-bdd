@@ -1,45 +1,151 @@
-import Database from "better-sqlite3";
+import type Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
+import { createRequire } from "module";
 import type { LocalOrder, LocalOrderItem, ProductReview, SupportMessage } from "@/lib/types";
 
+const require = createRequire(import.meta.url);
+
+let DatabaseConstructor: any = null;
+let sqliteAvailable: boolean | null = null;
 let dbInstance: Database.Database | null = null;
+let dbInitAttempted = false;
 
-function getDb(): Database.Database {
-  if (!dbInstance) {
-    let dbPath = path.resolve(process.cwd(), "database/database.sqlite");
+function initDbTables(db: any) {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS orders (
+        id TEXT PRIMARY KEY,
+        customer_name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        city TEXT,
+        area TEXT,
+        address TEXT NOT NULL,
+        note TEXT,
+        status TEXT DEFAULT 'pending',
+        payment_method TEXT DEFAULT 'cod',
+        subtotal REAL DEFAULT 0,
+        delivery_fee REAL DEFAULT 0,
+        discount REAL DEFAULT 0,
+        total REAL DEFAULT 0,
+        attribution TEXT,
+        created_at TEXT
+      );
 
-    // In Vercel serverless environment, copy to /tmp to avoid read-only filesystem restrictions
-    if (process.env.VERCEL) {
-      try {
-        const tmpDbPath = "/tmp/database.sqlite";
-        if (!fs.existsSync(tmpDbPath) && fs.existsSync(dbPath)) {
-          fs.copyFileSync(dbPath, tmpDbPath);
-        }
-        if (fs.existsSync(tmpDbPath)) {
-          dbPath = tmpDbPath;
-        }
-      } catch (e) {
-        console.warn("[Local DB] Could not copy database to /tmp on Vercel:", e);
-      }
-    }
+      CREATE TABLE IF NOT EXISTS order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id TEXT NOT NULL,
+        product_id TEXT,
+        variant_id TEXT,
+        product_name TEXT,
+        variant_name TEXT,
+        unit_price REAL DEFAULT 0,
+        quantity INTEGER DEFAULT 1,
+        total REAL DEFAULT 0
+      );
 
+      CREATE TABLE IF NOT EXISTS reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id TEXT NOT NULL,
+        product_name TEXT,
+        customer_name TEXT NOT NULL,
+        rating REAL DEFAULT 5,
+        comment TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at TEXT,
+        updated_at TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS support_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        message TEXT NOT NULL,
+        status TEXT DEFAULT 'new',
+        created_at TEXT,
+        updated_at TEXT
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_orders_phone ON orders(phone);
+      CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+      CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id);
+      CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status);
+    `);
+  } catch (err) {
+    console.warn("[Local DB] Error executing schema initialization:", err);
+  }
+}
+
+function getDb(): Database.Database | null {
+  if (dbInstance) return dbInstance;
+  if (dbInitAttempted && !dbInstance) return null;
+
+  if (sqliteAvailable === null) {
     try {
-      dbInstance = new Database(dbPath);
-      if (!process.env.VERCEL) {
-        dbInstance.pragma("journal_mode = WAL");
-      }
+      DatabaseConstructor = require("better-sqlite3");
+      sqliteAvailable = true;
     } catch (err) {
-      console.warn("[Local DB] Failed to open in readwrite mode, attempting readonly:", err);
-      try {
-        dbInstance = new Database(dbPath, { readonly: true });
-      } catch (e2) {
-        console.error("[Local DB] Critical: Could not open database:", e2);
-        throw e2;
-      }
+      console.warn("[Local DB] better-sqlite3 native module is unavailable in this environment:", err);
+      sqliteAvailable = false;
+      dbInitAttempted = true;
+      return null;
     }
   }
-  return dbInstance;
+
+  if (!sqliteAvailable || !DatabaseConstructor) {
+    return null;
+  }
+
+  let dbPath = path.resolve(process.cwd(), "database/database.sqlite");
+
+  if (process.env.VERCEL) {
+    try {
+      const tmpDir = "/tmp";
+      const tmpDbPath = path.join(tmpDir, "database.sqlite");
+      if (fs.existsSync(dbPath) && !fs.existsSync(tmpDbPath)) {
+        fs.copyFileSync(dbPath, tmpDbPath);
+      }
+      dbPath = tmpDbPath;
+    } catch (e) {
+      console.warn("[Local DB] Could not use /tmp database on Vercel:", e);
+    }
+  } else {
+    try {
+      const dir = path.dirname(dbPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    } catch (e) {
+      // directory creation ignored
+    }
+  }
+
+  try {
+    const instance = new DatabaseConstructor(dbPath);
+    if (!process.env.VERCEL) {
+      try {
+        instance.pragma("journal_mode = WAL");
+      } catch (e) {
+        // WAL mode ignored if unsupported
+      }
+    }
+    initDbTables(instance);
+    dbInstance = instance;
+    return dbInstance;
+  } catch (err) {
+    console.warn("[Local DB] Failed to open in readwrite mode, attempting readonly:", err);
+    try {
+      if (fs.existsSync(dbPath)) {
+        const instance = new DatabaseConstructor(dbPath, { readonly: true });
+        dbInstance = instance;
+        return dbInstance;
+      }
+    } catch (e2) {
+      console.warn("[Local DB] Could not open database in readonly mode:", e2);
+    }
+    dbInitAttempted = true;
+    return null;
+  }
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -57,63 +163,65 @@ export function createLocalOrder(
     quantity: number;
   }>
 ): boolean {
-  const db = getDb();
-  const insertOrder = db.prepare(`
-    INSERT INTO orders (
-      id, customer_name, phone, city, area, address, note,
-      status, payment_method, subtotal, delivery_fee, discount,
-      total, attribution, created_at
-    ) VALUES (
-      ?, ?, ?, ?, ?, ?, ?,
-      ?, ?, ?, ?, ?,
-      ?, ?, ?
-    )
-  `);
-
-  const insertItem = db.prepare(`
-    INSERT INTO order_items (
-      order_id, product_id, variant_id, product_name, variant_name,
-      unit_price, quantity, total
-    ) VALUES (
-      ?, ?, ?, ?, ?,
-      ?, ?, ?
-    )
-  `);
-
-  const transaction = db.transaction(() => {
-    insertOrder.run(
-      order.id,
-      order.customer_name,
-      order.phone,
-      order.city,
-      order.area,
-      order.address,
-      order.note || null,
-      order.status || "pending",
-      order.payment_method || "cod",
-      order.subtotal,
-      order.delivery_fee || 0,
-      order.discount || 0,
-      order.total,
-      order.attribution ? JSON.stringify(order.attribution) : null,
-      order.created_at || new Date().toISOString()
-    );
-
-    for (const item of items) {
-      insertItem.run(
-        order.id,
-        item.productId || "",
-        item.variantId || "standard",
-        item.name,
-        item.variantName || "Standard",
-        Number(item.price),
-        Number(item.quantity || 1),
-        Number(item.price) * Number(item.quantity || 1)
-      );
-    }
-  });
-
   try {
+    const db = getDb();
+    if (!db) return false;
+
+    const insertOrder = db.prepare(`
+      INSERT INTO orders (
+        id, customer_name, phone, city, area, address, note,
+        status, payment_method, subtotal, delivery_fee, discount,
+        total, attribution, created_at
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?,
+        ?, ?, ?
+      )
+    `);
+
+    const insertItem = db.prepare(`
+      INSERT INTO order_items (
+        order_id, product_id, variant_id, product_name, variant_name,
+        unit_price, quantity, total
+      ) VALUES (
+        ?, ?, ?, ?, ?,
+        ?, ?, ?
+      )
+    `);
+
+    const transaction = db.transaction(() => {
+      insertOrder.run(
+        order.id,
+        order.customer_name,
+        order.phone,
+        order.city,
+        order.area,
+        order.address,
+        order.note || null,
+        order.status || "pending",
+        order.payment_method || "cod",
+        order.subtotal,
+        order.delivery_fee || 0,
+        order.discount || 0,
+        order.total,
+        order.attribution ? JSON.stringify(order.attribution) : null,
+        order.created_at || new Date().toISOString()
+      );
+
+      for (const item of items) {
+        insertItem.run(
+          order.id,
+          item.productId || "",
+          item.variantId || "standard",
+          item.name,
+          item.variantName || "Standard",
+          Number(item.price),
+          Number(item.quantity || 1),
+          Number(item.price) * Number(item.quantity || 1)
+        );
+      }
+    });
+
     transaction();
     return true;
   } catch (e) {
@@ -125,8 +233,10 @@ export function createLocalOrder(
 export const insertLocalOrder = createLocalOrder;
 
 export function getLocalOrderById(orderId: string): LocalOrder | null {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return null;
+
     const orderRow = db.prepare("SELECT * FROM orders WHERE id = ?").get(orderId) as any;
     if (!orderRow) return null;
 
@@ -157,8 +267,10 @@ export function getLocalOrderById(orderId: string): LocalOrder | null {
 }
 
 export function getLocalOrdersByPhone(phone: string): LocalOrder[] {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return [];
+
     const digits = phone.replace(/\D/g, "");
     if (!digits || digits.length < 4) return [];
 
@@ -200,8 +312,10 @@ export function getLocalOrdersByPhone(phone: string): LocalOrder[] {
 }
 
 export function getAllLocalOrders(): LocalOrder[] {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return [];
+
     const orderRows = db.prepare("SELECT * FROM orders ORDER BY created_at DESC").all() as any[];
     return orderRows.map((row) => {
       const items = db.prepare("SELECT * FROM order_items WHERE order_id = ?").all(row.id) as LocalOrderItem[];
@@ -231,8 +345,10 @@ export function getAllLocalOrders(): LocalOrder[] {
 }
 
 export function updateLocalOrderStatus(orderId: string, status: string): boolean {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return false;
+
     const localStatusMap: Record<string, string> = {
       new: "pending",
       pending: "pending",
@@ -251,8 +367,10 @@ export function updateLocalOrderStatus(orderId: string, status: string): boolean
 }
 
 export function deleteLocalOrder(orderId: string): boolean {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return false;
+
     db.prepare("DELETE FROM order_items WHERE order_id = ?").run(orderId);
     const res = db.prepare("DELETE FROM orders WHERE id = ?").run(orderId);
     return res.changes > 0;
@@ -267,8 +385,10 @@ export function deleteLocalOrder(orderId: string): boolean {
    ────────────────────────────────────────────────────────── */
 
 export function getApprovedReviews(productId: string): ProductReview[] {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return [];
+
     const rows = db
       .prepare("SELECT * FROM reviews WHERE product_id = ? AND status = 'approved' ORDER BY created_at DESC")
       .all(productId) as any[];
@@ -293,8 +413,10 @@ export function getApprovedReviews(productId: string): ProductReview[] {
 }
 
 export function getAllReviews(): ProductReview[] {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return [];
+
     const rows = db.prepare("SELECT * FROM reviews ORDER BY created_at DESC").all() as any[];
     return rows.map((r) => ({
       id: r.id,
@@ -320,8 +442,10 @@ export function createReview(data: {
   rating: number;
   comment: string;
 }): boolean {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return false;
+
     const now = new Date().toISOString();
     db.prepare(`
       INSERT INTO reviews (product_id, product_name, customer_name, rating, comment, status, created_at, updated_at)
@@ -335,8 +459,10 @@ export function createReview(data: {
 }
 
 export function approveReview(id: number | string): boolean {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return false;
+
     const now = new Date().toISOString();
     const res = db.prepare("UPDATE reviews SET status = 'approved', updated_at = ? WHERE id = ?").run(now, id);
     return res.changes > 0;
@@ -347,8 +473,10 @@ export function approveReview(id: number | string): boolean {
 }
 
 export function deleteReview(id: number | string): boolean {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return false;
+
     const res = db.prepare("DELETE FROM reviews WHERE id = ?").run(id);
     return res.changes > 0;
   } catch (e) {
@@ -358,8 +486,10 @@ export function deleteReview(id: number | string): boolean {
 }
 
 export function getProductAllReviews(productId: string): ProductReview[] {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return [];
+
     const rows = db
       .prepare("SELECT * FROM reviews WHERE product_id = ? ORDER BY created_at DESC")
       .all(productId) as any[];
@@ -384,8 +514,10 @@ export function getProductAllReviews(productId: string): ProductReview[] {
 }
 
 export function calculateProductRatingStats(productId: string): { rating: number; reviewCount: number } {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return { rating: 5.0, reviewCount: 0 };
+
     const row = db.prepare(`
       SELECT AVG(rating) as avgRating, COUNT(*) as totalCount
       FROM reviews
@@ -418,57 +550,59 @@ export function syncProductReviews(
     created_at?: string;
   }>
 ): { rating: number; reviewCount: number } {
-  const db = getDb();
-  const now = new Date().toISOString();
+  try {
+    const db = getDb();
+    if (!db) return calculateProductRatingStats(productId);
 
-  const syncTx = db.transaction(() => {
-    // 1. Fetch current DB reviews for this product
-    const existing = db.prepare("SELECT id FROM reviews WHERE product_id = ?").all(productId) as { id: number }[];
-    const existingIds = new Set(existing.map((r) => r.id));
+    const now = new Date().toISOString();
 
-    // Keep track of IDs that remain
-    const keptIds = new Set<number>();
+    const syncTx = db.transaction(() => {
+      // 1. Fetch current DB reviews for this product
+      const existing = db.prepare("SELECT id FROM reviews WHERE product_id = ?").all(productId) as { id: number }[];
+      const existingIds = new Set(existing.map((r) => r.id));
 
-    const insertStmt = db.prepare(`
-      INSERT INTO reviews (product_id, product_name, customer_name, rating, comment, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+      // Keep track of IDs that remain
+      const keptIds = new Set<number>();
 
-    const updateStmt = db.prepare(`
-      UPDATE reviews
-      SET product_name = ?, customer_name = ?, rating = ?, comment = ?, status = ?, updated_at = ?
-      WHERE id = ?
-    `);
+      const insertStmt = db.prepare(`
+        INSERT INTO reviews (product_id, product_name, customer_name, rating, comment, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
 
-    for (const r of reviews) {
-      const custName = (r.customer_name || r.name || "Verified Customer").trim();
-      const ratingVal = Math.min(5, Math.max(1, Number(r.rating) || 5));
-      const commentVal = (r.comment || "").trim();
-      const statusVal = r.status === "pending" ? "pending" : "approved";
-      const createdAtVal = r.created_at || now;
+      const updateStmt = db.prepare(`
+        UPDATE reviews
+        SET product_name = ?, customer_name = ?, rating = ?, comment = ?, status = ?, updated_at = ?
+        WHERE id = ?
+      `);
 
-      const numId = typeof r.id === "number" ? r.id : Number(r.id);
+      for (const r of reviews) {
+        const custName = (r.customer_name || r.name || "Verified Customer").trim();
+        const ratingVal = Math.min(5, Math.max(1, Number(r.rating) || 5));
+        const commentVal = (r.comment || "").trim();
+        const statusVal = r.status === "pending" ? "pending" : "approved";
+        const createdAtVal = r.created_at || now;
 
-      if (!isNaN(numId) && numId > 0 && existingIds.has(numId)) {
-        updateStmt.run(productName, custName, ratingVal, commentVal, statusVal, now, numId);
-        keptIds.add(numId);
-      } else {
-        const res = insertStmt.run(productId, productName, custName, ratingVal, commentVal, statusVal, createdAtVal, now);
-        if (typeof res.lastInsertRowid === "number") {
-          keptIds.add(Number(res.lastInsertRowid));
+        const numId = typeof r.id === "number" ? r.id : Number(r.id);
+
+        if (!isNaN(numId) && numId > 0 && existingIds.has(numId)) {
+          updateStmt.run(productName, custName, ratingVal, commentVal, statusVal, now, numId);
+          keptIds.add(numId);
+        } else {
+          const res = insertStmt.run(productId, productName, custName, ratingVal, commentVal, statusVal, createdAtVal, now);
+          if (typeof res.lastInsertRowid === "number") {
+            keptIds.add(Number(res.lastInsertRowid));
+          }
         }
       }
-    }
 
-    // Delete reviews removed by admin
-    for (const oldId of existingIds) {
-      if (!keptIds.has(oldId)) {
-        db.prepare("DELETE FROM reviews WHERE id = ?").run(oldId);
+      // Delete reviews removed by admin
+      for (const oldId of existingIds) {
+        if (!keptIds.has(oldId)) {
+          db.prepare("DELETE FROM reviews WHERE id = ?").run(oldId);
+        }
       }
-    }
-  });
+    });
 
-  try {
     syncTx();
   } catch (err) {
     console.error(`[Local DB] Error syncing product reviews for ${productId}:`, err);
@@ -482,8 +616,9 @@ export function syncProductReviews(
    ────────────────────────────────────────────────────────── */
 
 export function getAllSupportMessages(): SupportMessage[] {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return [];
     return db.prepare("SELECT * FROM support_messages ORDER BY created_at DESC").all() as SupportMessage[];
   } catch (e) {
     console.error("[Local DB] Error getting support messages:", e);
@@ -492,8 +627,9 @@ export function getAllSupportMessages(): SupportMessage[] {
 }
 
 export function createSupportMessage(data: { name: string; phone: string; message: string }): boolean {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return false;
     const now = new Date().toISOString();
     db.prepare(`
       INSERT INTO support_messages (name, phone, message, status, created_at, updated_at)
@@ -507,8 +643,9 @@ export function createSupportMessage(data: { name: string; phone: string; messag
 }
 
 export function deleteSupportMessage(id: number | string): boolean {
-  const db = getDb();
   try {
+    const db = getDb();
+    if (!db) return false;
     const res = db.prepare("DELETE FROM support_messages WHERE id = ?").run(id);
     return res.changes > 0;
   } catch (e) {

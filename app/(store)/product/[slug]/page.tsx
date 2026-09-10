@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { supabaseCatalogService } from "@/lib/supabase";
 import { getApprovedReviews } from "@/lib/db";
 import { ProductView } from "@/components/store/product-view";
+import type { ProductReview } from "@/lib/types";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -51,7 +52,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   // Fetch approved reviews from local SQLite database
-  const approvedReviews = getApprovedReviews(product.id);
+  let approvedReviews: ProductReview[] = [];
+  try {
+    approvedReviews = getApprovedReviews(product.id);
+  } catch (e) {
+    console.warn("[ProductPage] Could not load customer reviews:", e);
+  }
 
   // Calculate dynamic review stats
   const reviewCount = approvedReviews.length;

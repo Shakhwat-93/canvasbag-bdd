@@ -13,6 +13,7 @@ import { ProductCard } from "@/components/store/product-card";
 import { PromoCtaBanner } from "@/components/store/promo-cta-banner";
 import { ReviewsSection } from "@/components/store/reviews-section";
 import { WhyChooseUs } from "@/components/store/why-choose-us";
+import type { ProductReview } from "@/lib/types";
 
 export const revalidate = 60; // Revalidate every 60s
 
@@ -36,7 +37,12 @@ export default async function HomePage() {
   ]);
 
   // Approved customer reviews from local DB
-  const reviews = getAllReviews().filter((r) => r.status === "approved");
+  let reviews: ProductReview[] = [];
+  try {
+    reviews = getAllReviews().filter((r) => r.status === "approved");
+  } catch (e) {
+    console.warn("[HomePage] Could not load customer reviews:", e);
+  }
 
   return (
     <div className="w-full bg-[#fafaf9]">

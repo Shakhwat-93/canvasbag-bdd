@@ -5,6 +5,7 @@ import { Check, Truck } from "lucide-react";
 import { getLocalOrderById } from "@/lib/db";
 import { formatBDT } from "@/lib/format";
 import { PurchaseTracker } from "@/components/store/purchase-tracker";
+import type { LocalOrder } from "@/lib/types";
 
 interface OrderSuccessPageProps {
   params: Promise<{ id: string }>;
@@ -17,7 +18,12 @@ export const metadata: Metadata = {
 
 export default async function OrderSuccessPage({ params }: OrderSuccessPageProps) {
   const { id: orderId } = await params;
-  const order = getLocalOrderById(orderId);
+  let order: LocalOrder | null = null;
+  try {
+    order = getLocalOrderById(orderId);
+  } catch (e) {
+    console.warn("[OrderSuccessPage] Could not load local order:", e);
+  }
 
   return (
     <div className="mx-auto max-w-xl px-4 py-16 text-center min-h-[60vh] flex flex-col justify-center items-center font-poppins">

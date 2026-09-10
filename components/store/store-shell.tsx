@@ -14,7 +14,6 @@ interface StoreShellProps {
 
 export function StoreShell({ settings, categories, children }: StoreShellProps) {
   const pathname = usePathname();
-  console.log("[StoreShell DEBUG] pathname:", pathname, "announcementShowProduct:", settings.announcementShowProduct);
   const hasAnnouncement = isAnnouncementVisible(pathname, settings);
 
   return (
