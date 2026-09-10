@@ -1,0 +1,30 @@
+CREATE TABLE IF NOT EXISTS orders (
+  id VARCHAR(36) PRIMARY KEY,
+  customer_name VARCHAR(255) NOT NULL,
+  phone VARCHAR(50) NOT NULL,
+  city VARCHAR(100) NOT NULL,
+  area VARCHAR(100) NOT NULL,
+  address TEXT NOT NULL,
+  note TEXT,
+  status VARCHAR(50) NOT NULL DEFAULT 'pending',
+  payment_method VARCHAR(50) NOT NULL DEFAULT 'cod',
+  subtotal INT NOT NULL,
+  delivery_fee INT NOT NULL DEFAULT 0,
+  discount INT NOT NULL DEFAULT 0,
+  total INT NOT NULL,
+  attribution JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  order_id VARCHAR(36) NOT NULL,
+  product_id VARCHAR(100) NOT NULL,
+  variant_id VARCHAR(100) NOT NULL,
+  product_name VARCHAR(255) NOT NULL,
+  variant_name VARCHAR(255) NOT NULL,
+  unit_price INT NOT NULL,
+  quantity INT NOT NULL,
+  total INT NOT NULL,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

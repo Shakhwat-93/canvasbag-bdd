@@ -1,0 +1,46 @@
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.cursor/
+.zed/
+/.codex
+
+# Dependencies
+node_modules/
+/vendor/
+
+# Next.js build output
+.next/
+/out/
+/build/
+
+# Environment files
+.env
+.env*.local
+.env.backup
+.env.production
+!.env.example
+
+# Temporary files & deployment archives
+/tmp/
+/scratch/
+/test-results/
+/react-backup/
+supabase/.temp/
+*.zip
+*.tar.gz
+/canvasbag-deploy.zip
+/canvasbag-cpanel-ready.zip*
+
+# SQLite runtime temporary files (preserves base database.sqlite)
+database/*.sqlite-wal
+database/*.sqlite-shm
+database/*.sqlite-journal
