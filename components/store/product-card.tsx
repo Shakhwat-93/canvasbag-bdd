@@ -85,14 +85,14 @@ export function ProductCard({ product }: ProductCardProps) {
     <div className="bg-white rounded-2xl overflow-hidden border border-[#e5e7eb] hover:border-[#ff6b35] hover:shadow-lg transition-all duration-200 flex flex-col h-full group">
       <Link className="block flex-1" href={`/product/${product.slug}`}>
         {/* Product Image Box */}
-        <div className="relative aspect-square overflow-hidden bg-[#f8f9fa]">
+        <div className="relative aspect-square overflow-hidden bg-[#f8f9fa] flex items-center justify-center">
           <Image
             src={validVariantImage}
             alt={product.name}
             fill
             quality={85}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 400px"
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="object-contain p-2 transition-transform duration-200"
           />
 
           {/* Discount Badge */}

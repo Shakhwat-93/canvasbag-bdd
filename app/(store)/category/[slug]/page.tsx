@@ -143,13 +143,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             </div>
 
             {currentCategory.image && (
-              <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
+              <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 flex items-center justify-center">
                 <Image
                   src={currentCategory.image}
                   alt={currentCategory.name}
                   fill
                   sizes="(max-width: 640px) 96px, 128px"
-                  className="object-cover"
+                  className="object-contain p-1"
                   priority
                 />
               </div>

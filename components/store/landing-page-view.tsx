@@ -209,13 +209,13 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
             return (
               <section key={compIdx} className="py-16 bg-white border-y border-slate-150">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                  <div className="relative aspect-square overflow-hidden bg-slate-50 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="relative aspect-square overflow-hidden bg-slate-50 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-center">
                     <Image
                       src={firstImg}
                       alt={product.name}
                       fill
                       sizes="(max-width: 768px) 100vw, 50vw"
-                      className="object-cover"
+                      className="object-contain p-4"
                     />
                   </div>
 
@@ -401,7 +401,7 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
                         <div className="space-y-5 text-left">
                           {/* Product Brief */}
                           <div className="bg-white border border-slate-200 rounded-2xl p-4 flex gap-4 shadow-xs">
-                            <div className="relative h-16 w-16 rounded-xl overflow-hidden shrink-0 border border-slate-100 bg-slate-50">
+                            <div className="relative h-16 w-16 rounded-xl overflow-hidden shrink-0 border border-slate-100 bg-slate-50 flex items-center justify-center">
                               <Image
                                 src={
                                   activeVariant?.image ||
@@ -414,7 +414,7 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
                                 alt={product.name}
                                 fill
                                 sizes="64px"
-                                className="object-cover"
+                                className="object-contain p-1"
                               />
                             </div>
                             <div className="min-w-0 flex-1">

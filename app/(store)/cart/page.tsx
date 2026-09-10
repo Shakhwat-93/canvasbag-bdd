@@ -52,13 +52,13 @@ export default function CartPage() {
                 key={`${item.productId}-${item.variantId}`}
                 className="grid grid-cols-[88px_1fr] sm:grid-cols-[100px_1fr] gap-4 rounded-2xl p-4 bg-white border border-[#e5e7eb] shadow-xs"
               >
-                <div className="relative aspect-square overflow-hidden rounded-xl bg-slate-50 border border-[#e5e7eb] shrink-0">
+                <div className="relative aspect-square overflow-hidden rounded-xl bg-slate-50 border border-[#e5e7eb] shrink-0 flex items-center justify-center">
                   <Image
                     src={item.image || "/brand/logo.webp"}
                     alt={item.name}
                     fill
                     sizes="100px"
-                    className="object-cover"
+                    className="object-contain p-1"
                   />
                 </div>
 

@@ -95,13 +95,13 @@ export function CartDrawer() {
                 className="flex gap-4 p-3.5 rounded-2xl bg-white border border-slate-100 shadow-xs hover:border-slate-200 transition-all"
               >
                 {/* Thumbnail */}
-                <div className="relative w-20 h-20 min-w-20 min-h-20 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+                <div className="relative w-20 h-20 min-w-20 min-h-20 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 shrink-0 flex items-center justify-center">
                   <Image
                     src={sanitizeImageUrl(item.image, "/brand/logo.webp")}
                     alt={item.name}
                     fill
                     sizes="80px"
-                    className="object-cover"
+                    className="object-contain p-1"
                   />
                 </div>
 

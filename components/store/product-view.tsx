@@ -229,7 +229,7 @@ export function ProductView({ product, reviews: initialReviews, settings, relate
                 priority
                 quality={90}
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 750px"
-                className="object-cover"
+                className="object-contain p-2 sm:p-3"
               />
 
               {discountPercent > 0 && (
@@ -271,7 +271,7 @@ export function ProductView({ product, reviews: initialReviews, settings, relate
                     key={idx}
                     type="button"
                     onClick={() => setActiveImageIndex(idx)}
-                    className={`relative w-14 h-14 rounded-xl bg-white border overflow-hidden shrink-0 transition-all cursor-pointer ${
+                    className={`relative w-14 h-14 rounded-xl bg-white border overflow-hidden shrink-0 transition-all cursor-pointer flex items-center justify-center ${
                       idx === activeImageIndex
                         ? "border-[#ff6b35] ring-2 ring-[#ff6b35]/20 scale-[0.98]"
                         : "border-[#e5e7eb] hover:border-slate-400"
@@ -282,7 +282,7 @@ export function ProductView({ product, reviews: initialReviews, settings, relate
                       alt={`${product.name} Thumbnail ${idx + 1}`}
                       fill
                       sizes="56px"
-                      className="object-cover"
+                      className="object-contain p-1"
                     />
                   </button>
                 ))}

@@ -279,13 +279,13 @@ export default function CheckoutPage() {
               <div className="divide-y divide-[#e5e7eb] max-h-64 overflow-y-auto pr-1 no-scrollbar">
                 {items.map((item) => (
                   <div key={`${item.productId}-${item.variantId}`} className="flex items-center gap-3 py-3 relative">
-                    <div className="relative h-14 w-14 rounded-xl overflow-hidden shrink-0 border border-[#e5e7eb] bg-[#f8f9fa]">
+                    <div className="relative h-14 w-14 rounded-xl overflow-hidden shrink-0 border border-[#e5e7eb] bg-[#f8f9fa] flex items-center justify-center">
                       <Image
                         src={item.image || "/brand/logo.webp"}
                         alt={item.name}
                         fill
                         sizes="56px"
-                        className="object-cover"
+                        className="object-contain p-0.5"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
