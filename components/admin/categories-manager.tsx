@@ -67,139 +67,222 @@ function CategoryNodeRow({
   const isVisible = node.isVisible !== false && node.is_visible !== false;
   const isActive = node.isActive !== false && node.is_active !== false;
 
+  const indentMobile = Math.min(depth * 10, 24);
+  const indentDesktop = Math.min(depth * 24, 110);
+
   return (
     <div className="space-y-1">
       <div
-        className={`group flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-2xl border transition-all duration-150 ${
+        className={`group relative rounded-2xl border transition-all duration-150 ml-[var(--indent-m)] sm:ml-[var(--indent-d)] ${
           !isActive
             ? "bg-slate-100/70 border-slate-200 opacity-75"
             : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs"
-        }`}
-        style={{ marginLeft: `${Math.min(depth * 22, 110)}px` }}
+        } ${depth > 0 ? "border-l-[3px] border-l-[var(--primary)]/40" : ""}`}
+        style={
+          {
+            "--indent-m": `${indentMobile}px`,
+            "--indent-d": `${indentDesktop}px`,
+          } as React.CSSProperties
+        }
       >
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          {/* Expand/Collapse Chevron */}
-          {hasChildren ? (
-            <button
-              type="button"
-              onClick={() => onToggleExpand(node.id)}
-              className="p-1 rounded-md hover:bg-slate-100 text-slate-500 cursor-pointer flex-shrink-0"
-              aria-label={isExpanded ? "Collapse subcategories" : "Expand subcategories"}
-            >
-              <ChevronRight
-                className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? "rotate-90 text-[var(--primary)]" : ""}`}
-              />
-            </button>
-          ) : (
-            <span className="w-6 flex-shrink-0 flex items-center justify-center text-slate-300">
-              {depth > 0 && <CornerDownRight className="w-3.5 h-3.5" />}
-            </span>
-          )}
-
-          {/* Thumbnail */}
-          <div className="relative h-10 w-10 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
-            {node.image ? (
-              <Image src={node.image} alt={node.name} fill sizes="40px" className="object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-400">
-                {node.icon || "📁"}
-              </div>
-            )}
-          </div>
-
-          {/* Category Info */}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="font-bold text-slate-900 text-sm truncate">{node.name}</h4>
-              <span className="text-[10px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                {node.directProductCount} {node.directProductCount === 1 ? "product" : "products"}
-                {hasChildren && ` · ${node.totalProductCount} total`}
-              </span>
-              <span className="text-[10px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.2 rounded border border-slate-200">
-                #{node.sortOrder ?? 0}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-              <Link
-                href={`/category/${node.slug}`}
-                target="_blank"
-                className="font-mono text-[11px] text-slate-500 hover:text-[var(--primary)] flex items-center gap-1 truncate"
+        <div className="p-3 sm:p-3.5 space-y-2.5 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-3">
+          {/* Top/Left Section: Chevron, Image, Title & Metadata */}
+          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+            {/* Expand/Collapse Chevron or Depth guide */}
+            {hasChildren ? (
+              <button
+                type="button"
+                onClick={() => onToggleExpand(node.id)}
+                className="mt-0.5 sm:mt-0 p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-[var(--primary)] cursor-pointer shrink-0 transition-colors active:scale-95"
+                aria-label={isExpanded ? "Collapse subcategories" : "Expand subcategories"}
               >
-                <span>/category/{node.slug}</span>
-                <ExternalLink className="w-2.5 h-2.5" />
-              </Link>
+                <ChevronRight
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    isExpanded ? "rotate-90 text-[var(--primary)]" : ""
+                  }`}
+                />
+              </button>
+            ) : depth > 0 ? (
+              <span className="mt-1.5 sm:mt-0 w-6 shrink-0 flex items-center justify-center text-slate-400">
+                <CornerDownRight className="w-3.5 h-3.5" />
+              </span>
+            ) : (
+              <span className="hidden sm:block w-2 shrink-0" />
+            )}
+
+            {/* Thumbnail */}
+            <div className="relative h-11 w-11 sm:h-11 sm:w-11 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 shrink-0 flex items-center justify-center shadow-2xs">
+              {node.image ? (
+                <Image
+                  src={node.image}
+                  alt={node.name}
+                  fill
+                  sizes="48px"
+                  className="object-contain p-1"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-base font-bold text-slate-400">
+                  {node.icon || "📁"}
+                </div>
+              )}
+            </div>
+
+            {/* Category Info */}
+            <div className="min-w-0 flex-1">
+              {/* Row 1: Name + Mobile Badges */}
+              <div className="flex items-start justify-between gap-2">
+                <h4 className="font-bold text-slate-900 text-sm sm:text-base leading-snug truncate">
+                  {node.name}
+                </h4>
+
+                {/* Mobile Status Badges (Top-Right, Stacked or Flex, Never Squished) */}
+                <div className="flex sm:hidden items-center gap-1.5 shrink-0">
+                  <span
+                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap ${
+                      isActive
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        : "bg-slate-100 text-slate-600 border border-slate-200"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-slate-400"}`} />
+                    {isActive ? "Active" : "Inactive"}
+                  </span>
+                  <span
+                    className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap ${
+                      isVisible
+                        ? "bg-blue-50 text-blue-700 border border-blue-200"
+                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                    }`}
+                  >
+                    {isVisible ? "In Menu" : "Hidden"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Row 2: Product Count, Sort Order, Child Indicator */}
+              <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                <span className="text-[10px] sm:text-[11px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md">
+                  {node.directProductCount} {node.directProductCount === 1 ? "product" : "products"}
+                  {hasChildren && ` · ${node.totalProductCount} total`}
+                </span>
+                <span className="text-[10px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
+                  #{node.sortOrder ?? 0}
+                </span>
+                {hasChildren && (
+                  <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 px-1.5 py-0.5 rounded">
+                    {node.children.length} {node.children.length === 1 ? "subcategory" : "subcategories"}
+                  </span>
+                )}
+              </div>
+
+              {/* Row 3: Live Link */}
+              <div className="mt-1">
+                <Link
+                  href={`/category/${node.slug}`}
+                  target="_blank"
+                  className="font-mono text-[11px] text-slate-500 hover:text-[var(--primary)] inline-flex items-center gap-1 truncate max-w-full transition-colors"
+                  aria-label={`View category ${node.name}`}
+                >
+                  <span className="truncate">/category/{node.slug}</span>
+                  <ExternalLink className="w-2.5 h-2.5 shrink-0 text-slate-400" />
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Badges & Actions */}
-        <div className="flex items-center gap-2 mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 justify-between sm:justify-end">
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                isActive ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-200 text-slate-600"
-              }`}
-            >
-              {isActive ? "Active" : "Inactive"}
-            </span>
-            <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                isVisible ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-amber-50 text-amber-700 border border-amber-200"
-              }`}
-            >
-              {isVisible ? "In Menu" : "Hidden"}
-            </span>
-          </div>
+          {/* Bottom/Right Section: Badges (on Desktop) & Action Toolbar */}
+          <div className="pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 flex items-center justify-between sm:justify-end gap-2 sm:gap-2.5">
+            {/* Desktop Status Badges */}
+            <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+              <span
+                className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap ${
+                  isActive
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    : "bg-slate-100 text-slate-600 border border-slate-200"
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-slate-400"}`} />
+                {isActive ? "Active" : "Inactive"}
+              </span>
+              <span
+                className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap ${
+                  isVisible
+                    ? "bg-blue-50 text-blue-700 border border-blue-200"
+                    : "bg-amber-50 text-amber-700 border border-amber-200"
+                }`}
+              >
+                {isVisible ? "In Menu" : "Hidden"}
+              </span>
+            </div>
 
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => onAddChild(node)}
-              className="p-1.5 text-slate-600 hover:bg-slate-100 hover:text-[var(--primary)] rounded-lg cursor-pointer transition-colors"
-              title="Add Subcategory"
-            >
-              <FolderPlus className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onMove(node, "up")}
-              className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
-              title="Move Up"
-            >
-              <ArrowUp className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onMove(node, "down")}
-              className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
-              title="Move Down"
-            >
-              <ArrowDown className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onToggleVisibility(node)}
-              className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
-              title={isVisible ? "Hide from Navigation" : "Show in Navigation"}
-            >
-              {isVisible ? <Eye className="w-3.5 h-3.5 text-blue-600" /> : <EyeOff className="w-3.5 h-3.5 text-amber-600" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => onEdit(node)}
-              className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
-              title="Edit Category"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(node)}
-              className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
-              title="Delete Category"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            {/* Action Buttons Toolbar */}
+            <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-1">
+              {/* Group A: Tree & Visibility Actions */}
+              <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-50 sm:bg-transparent p-0.5 sm:p-0 rounded-xl border border-slate-200/60 sm:border-0">
+                <button
+                  type="button"
+                  onClick={() => onAddChild(node)}
+                  className="h-8.5 w-8.5 sm:h-7.5 sm:w-7.5 flex items-center justify-center text-slate-600 hover:text-[var(--primary)] hover:bg-slate-200/70 sm:hover:bg-slate-100 rounded-lg cursor-pointer transition-all active:scale-90"
+                  aria-label="Add Subcategory"
+                >
+                  <FolderPlus className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onMove(node, "up")}
+                  className="h-8.5 w-8.5 sm:h-7.5 sm:w-7.5 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 sm:hover:bg-slate-100 rounded-lg cursor-pointer transition-all active:scale-90"
+                  aria-label="Move Category Up"
+                >
+                  <ArrowUp className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onMove(node, "down")}
+                  className="h-8.5 w-8.5 sm:h-7.5 sm:w-7.5 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 sm:hover:bg-slate-100 rounded-lg cursor-pointer transition-all active:scale-90"
+                  aria-label="Move Category Down"
+                >
+                  <ArrowDown className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onToggleVisibility(node)}
+                  className={`h-8.5 w-8.5 sm:h-7.5 sm:w-7.5 flex items-center justify-center rounded-lg cursor-pointer transition-all active:scale-90 ${
+                    isVisible
+                      ? "text-blue-600 hover:bg-blue-50"
+                      : "text-amber-600 hover:bg-amber-50"
+                  }`}
+                  aria-label={isVisible ? "Hide from Navigation" : "Show in Navigation"}
+                >
+                  {isVisible ? (
+                    <Eye className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                  )}
+                </button>
+              </div>
+
+              {/* Group B: Edit & Delete Actions */}
+              <div className="flex items-center gap-1 sm:gap-1">
+                <button
+                  type="button"
+                  onClick={() => onEdit(node)}
+                  className="h-8.5 px-2.5 sm:h-7.5 sm:px-2 flex items-center gap-1 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer transition-all active:scale-95"
+                  aria-label="Edit Category"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span className="sm:hidden">Edit</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDelete(node)}
+                  className="h-8.5 w-8.5 sm:h-7.5 sm:w-7.5 flex items-center justify-center text-red-500 hover:text-red-700 bg-red-50/70 hover:bg-red-100 rounded-lg cursor-pointer transition-all active:scale-90"
+                  aria-label="Delete Category"
+                >
+                  <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -559,56 +642,59 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
       </div>
 
       {/* Controls: Search, Status Filter, Expand/Collapse */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-2xl border border-slate-200">
-        <div className="flex flex-1 items-center gap-2">
-          <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3 bg-slate-50/80 p-3 rounded-2xl border border-slate-200">
+        <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-2">
+          <div className="relative flex-1 w-full sm:max-w-sm">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={categorySearchTerm}
               onChange={(e) => setCategorySearchTerm(e.target.value)}
               placeholder="Search category name or slug..."
-              className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--primary)]"
+              className="w-full pl-9 pr-8 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--primary)]"
             />
             {categorySearchTerm && (
               <button
                 type="button"
                 onClick={() => setCategorySearchTerm("")}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5"
+                aria-label="Clear search"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          <select
-            value={categoryStatusFilter}
-            onChange={(e) => setCategoryStatusFilter(e.target.value as any)}
-            className="text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 font-medium text-slate-700 cursor-pointer"
-          >
-            <option value="all">All Status ({categories.length})</option>
-            <option value="active">Active Only ({categories.filter((c) => c.isActive !== false && c.is_active !== false).length})</option>
-            <option value="inactive">Inactive ({categories.filter((c) => c.isActive === false || c.is_active === false).length})</option>
-            <option value="visible">Visible in Menu ({categories.filter((c) => c.isVisible !== false && c.is_visible !== false).length})</option>
-            <option value="hidden">Hidden from Menu ({categories.filter((c) => c.isVisible === false || c.is_visible === false).length})</option>
-          </select>
-        </div>
+          <div className="flex items-center justify-between gap-2">
+            <select
+              value={categoryStatusFilter}
+              onChange={(e) => setCategoryStatusFilter(e.target.value as any)}
+              className="flex-1 sm:flex-initial text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 font-medium text-slate-700 cursor-pointer min-w-0 truncate"
+            >
+              <option value="all">All Status ({categories.length})</option>
+              <option value="active">Active Only ({categories.filter((c) => c.isActive !== false && c.is_active !== false).length})</option>
+              <option value="inactive">Inactive ({categories.filter((c) => c.isActive === false || c.is_active === false).length})</option>
+              <option value="visible">Visible in Menu ({categories.filter((c) => c.isVisible !== false && c.is_visible !== false).length})</option>
+              <option value="hidden">Hidden from Menu ({categories.filter((c) => c.isVisible === false || c.is_visible === false).length})</option>
+            </select>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={expandAllCategories}
-            className="px-3 py-1.5 text-[11px] font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 cursor-pointer"
-          >
-            Expand All
-          </button>
-          <button
-            type="button"
-            onClick={collapseAllCategories}
-            className="px-3 py-1.5 text-[11px] font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 cursor-pointer"
-          >
-            Collapse All
-          </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={expandAllCategories}
+                className="px-2.5 sm:px-3 py-1.5 text-[11px] font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 cursor-pointer active:scale-95"
+              >
+                Expand All
+              </button>
+              <button
+                type="button"
+                onClick={collapseAllCategories}
+                className="px-2.5 sm:px-3 py-1.5 text-[11px] font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 cursor-pointer active:scale-95"
+              >
+                Collapse All
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
