@@ -28,7 +28,7 @@ export async function sendMetaPurchaseEvent(
     const settings = await getCatalogSettings();
     const pixelId = reqInfo.pixelIdOverride || settings.pixelId || process.env.FACEBOOK_PIXEL_ID || "";
     const accessToken = settings.fbAccessToken || process.env.FACEBOOK_ACCESS_TOKEN || "";
-    const testCode = settings.fbTestCode || process.env.FACEBOOK_TEST_EVENT_CODE || "";
+    const testCode = (settings.fbTestCode?.trim() ? settings.fbTestCode : (process.env.FACEBOOK_TEST_EVENT_CODE || "TEST79130")).trim();
 
     if (!pixelId || !accessToken) {
       return false;

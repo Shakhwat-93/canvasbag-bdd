@@ -983,6 +983,28 @@ export function SettingsManager({ initialSettings }: SettingsManagerProps) {
               className="w-full h-10 px-3 mt-1.5 rounded-xl border border-slate-200 text-xs font-mono font-bold bg-white shadow-2xs"
             />
           </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700">Meta Test Event Code (e.g. Events Manager Test Events)</label>
+            <input
+              type="text"
+              value={settings.fbTestCode || ""}
+              onChange={(e) => setSettings({ ...settings, fbTestCode: e.target.value })}
+              placeholder="TEST79130"
+              className="w-full h-10 px-3 mt-1.5 rounded-xl border border-slate-200 text-xs font-mono font-bold bg-white shadow-2xs"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700">Meta Conversions API (CAPI) Access Token</label>
+            <input
+              type="password"
+              value={settings.fbAccessToken || ""}
+              onChange={(e) => setSettings({ ...settings, fbAccessToken: e.target.value })}
+              placeholder="EAAG..."
+              className="w-full h-10 px-3 mt-1.5 rounded-xl border border-slate-200 text-xs font-mono font-bold bg-white shadow-2xs"
+            />
+          </div>
         </div>
       </div>
     </form>

@@ -53,7 +53,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const gtmId = (settings.gtmId || "").trim();
   const ga4Id = (settings.ga4Id || process.env.GA4_MEASUREMENT_ID || "").trim();
   const pixelId = (settings.pixelId || process.env.FACEBOOK_PIXEL_ID || "").trim();
-  const fbTestCode = (settings.fbTestCode || process.env.FACEBOOK_TEST_EVENT_CODE || "").trim();
+  const fbTestCode = (settings.fbTestCode?.trim() ? settings.fbTestCode : (process.env.FACEBOOK_TEST_EVENT_CODE || "TEST79130")).trim();
   const savedTheme = settings.themeColor || "gradient:#ff804e,#ff6b35,light";
 
   const { primary, gradient, foreground } = getThemeStyles(savedTheme);
