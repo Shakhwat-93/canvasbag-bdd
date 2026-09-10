@@ -70,7 +70,7 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
             <div className="flex-1 flex justify-center">
               <Link href="/" className="flex items-center gap-2 group">
                 <Image
-                  src="/brand/logo.webp"
+                  src={settings.logoUrl || "/brand/logo.webp"}
                   alt="CanvasBag Logo"
                   width={36}
                   height={36}
@@ -105,7 +105,7 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
           <div className="hidden md:flex items-center justify-between h-16 gap-6">
             <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 group">
               <Image
-                src="/brand/logo.webp"
+                src={settings.logoUrl || "/brand/logo.webp"}
                 alt="CanvasBag Logo"
                 width={38}
                 height={38}
@@ -287,7 +287,7 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
                 className="flex items-center gap-2 group"
               >
                 <Image
-                  src="/brand/logo.webp"
+                  src={settings.logoUrl || "/brand/logo.webp"}
                   alt="CanvasBag Logo"
                   width={32}
                   height={32}

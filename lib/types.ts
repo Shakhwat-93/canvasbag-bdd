@@ -116,6 +116,7 @@ export type SiteSettings = {
   promoDescription?: string;
   promoLink?: string;
   promoButtonText?: string;
+  logoUrl?: string | null;
   heroBgImage?: string;
   heroSliderImage1?: string | null;
   heroSliderLink1?: string | null;
@@ -123,6 +124,10 @@ export type SiteSettings = {
   heroSliderLink2?: string | null;
   heroSliderImage3?: string | null;
   heroSliderLink3?: string | null;
+  heroSliderImage4?: string | null;
+  heroSliderLink4?: string | null;
+  heroSliderImage5?: string | null;
+  heroSliderLink5?: string | null;
   heroImage1?: string;
   heroImage2?: string;
   heroImage3?: string;

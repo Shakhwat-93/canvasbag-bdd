@@ -22,7 +22,7 @@ export function Footer({ categories = [], settings = {} }: FooterProps) {
           <div>
             <Link href="/" className="inline-flex items-center gap-2.5 mb-4 group">
               <Image
-                src="/brand/logo.webp"
+                src={settings.logoUrl || "/brand/logo.webp"}
                 alt="CanvasBag Logo"
                 width={36}
                 height={36}

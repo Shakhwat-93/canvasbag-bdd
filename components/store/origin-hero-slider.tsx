@@ -11,23 +11,53 @@ interface OriginHeroSliderProps {
 }
 
 export function OriginHeroSlider({ settings = {} }: OriginHeroSliderProps) {
-  const slides = [
+  const configuredList = [
     {
-      image: settings.heroSliderImage1 || "/brand/hero-slider-1.webp",
+      image: settings.heroSliderImage1,
       link: settings.heroSliderLink1 || "/#best-sellers",
+      alt: "CanvasBag Bangladesh Hero 1",
+    },
+    {
+      image: settings.heroSliderImage2,
+      link: settings.heroSliderLink2 || "/shop",
+      alt: "CanvasBag Bangladesh Hero 2",
+    },
+    {
+      image: settings.heroSliderImage3,
+      link: settings.heroSliderLink3 || "/category/everyday-totes",
+      alt: "CanvasBag Bangladesh Hero 3",
+    },
+    {
+      image: settings.heroSliderImage4,
+      link: settings.heroSliderLink4 || "/shop",
+      alt: "CanvasBag Bangladesh Hero 4",
+    },
+    {
+      image: settings.heroSliderImage5,
+      link: settings.heroSliderLink5 || "/shop",
+      alt: "CanvasBag Bangladesh Hero 5",
+    },
+  ].filter((s): s is { image: string; link: string; alt: string } => Boolean(s.image && typeof s.image === "string" && s.image.trim() !== ""));
+
+  const defaultFallbackSlides = [
+    {
+      image: "/brand/hero-slider-1.webp",
+      link: "/#best-sellers",
       alt: "CanvasBag Bangladesh Hero Offer",
     },
     {
-      image: settings.heroSliderImage2 || "/brand/hero-banner.webp",
-      link: settings.heroSliderLink2 || "/shop",
+      image: "/brand/hero-banner.webp",
+      link: "/shop",
       alt: "CanvasBag Bangladesh Special Collection",
     },
     {
-      image: settings.heroSliderImage3 || "/brand/smart-travel-bag/black-color.webp",
-      link: settings.heroSliderLink3 || "/category/everyday-totes",
+      image: "/brand/smart-travel-bag/black-color.webp",
+      link: "/category/everyday-totes",
       alt: "CanvasBag Bangladesh Travel Gear",
     },
-  ].filter((s) => Boolean(s.image));
+  ];
+
+  const slides = configuredList.length > 0 ? configuredList : defaultFallbackSlides;
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
