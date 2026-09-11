@@ -62,7 +62,10 @@ export async function sendMetaPurchaseEvent(
       item_price: Number(item.price || 0),
     }));
 
-    const customData = {
+    const totalQuantity = items.reduce((acc, item) => acc + Number(item.quantity || 1), 0);
+    const contentIds = items.map((item) => String(item.productId || item.id || "")).filter(Boolean);
+
+    const customData: Record<string, any> = {
       currency: "BDT",
       value: Number(order.total || 0),
       order_id: String(order.id),
@@ -70,11 +73,18 @@ export async function sendMetaPurchaseEvent(
       contents,
     };
 
+    if (contentIds.length > 0) {
+      customData.content_ids = contentIds;
+    }
+    if (totalQuantity > 0) {
+      customData.num_items = totalQuantity;
+    }
+
     const eventData: Record<string, any> = {
       event_name: "Purchase",
       event_time: Math.floor(Date.now() / 1000),
       event_id: `order_${order.id}`,
-      event_source_url: order.fullUrl || "https://canvasbag.store",
+      event_source_url: order.fullUrl || "https://canvasbagbd.com/checkout",
       action_source: "website",
       user_data: userData,
       custom_data: customData,
@@ -96,7 +106,7 @@ export async function sendMetaPurchaseEvent(
     });
 
     if (res.ok) {
-      console.log(`[Meta CAPI] Purchase event sent for Order #${order.id}`);
+      console.log(`[Meta CAPI] Purchase event sent for Order #${order.id}${testCode ? ` (Test: ${testCode})` : ""}`);
       return true;
     } else {
       const errJson = await res.json();

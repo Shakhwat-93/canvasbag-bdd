@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Toaster } from "sonner";
 import { CartProvider } from "@/components/providers/cart-provider";
+import { NavigationTracker } from "@/components/store/navigation-tracker";
 import { supabaseCatalogService } from "@/lib/supabase";
 import "./globals.css";
 
@@ -118,6 +119,31 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }}
         />
 
+        {/* Synchronous Base Analytics Initialization (dataLayer, fbTestCode, fbq stub) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              window.fbTestCode = "${fbTestCode}";
+              ${
+                pixelId
+                  ? `
+              !function(f,b,e,v,n,t,s)
+              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+              n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];
+              s.parentNode.insertBefore(t,s)}(window, document,'script',
+              'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('init', '${pixelId}');
+              `
+                  : ""
+              }
+            `,
+          }}
+        />
+
         {/* GTM Script */}
         {gtmId && (
           <Script
@@ -156,29 +182,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             />
           </>
         )}
-
-        {/* Meta Pixel Script */}
-        {pixelId && (
-          <Script
-            id="meta-pixel"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
-                window.fbTestCode = "${fbTestCode}";
-                !function(f,b,e,v,n,t,s)
-                {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-                n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-                if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-                n.queue=[];t=b.createElement(e);t.async=!0;
-                t.src=v;s=b.getElementsByTagName(e)[0];
-                s.parentNode.insertBefore(t,s)}(window, document,'script',
-                'https://connect.facebook.net/en_US/fbevents.js');
-                fbq('init', '${pixelId}');
-                ${fbTestCode ? `fbq('track', 'PageView', {}, { test_event_code: '${fbTestCode}' });` : `fbq('track', 'PageView');`}
-              `,
-            }}
-          />
-        )}
       </head>
       <body suppressHydrationWarning className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden text-slate-800 antialiased font-poppins selection:bg-[var(--primary)] selection:text-[var(--primary-foreground)]">
         {gtmId && (
@@ -204,6 +207,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         )}
 
         <CartProvider>
+          <NavigationTracker />
           {children}
           <Toaster position="top-center" richColors closeButton />
         </CartProvider>

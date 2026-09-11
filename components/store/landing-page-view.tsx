@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -54,6 +54,48 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
   const isFreeShipping = subtotal >= 2500 && subtotal > 0;
   const deliveryFee = isFreeShipping ? 0 : shippingZone === "Inside Dhaka" ? shippingInsideFee : shippingOutsideFee;
   const total = Math.max(subtotal + deliveryFee - discount, 0);
+
+  const hasInitiatedCheckoutRef = useRef(false);
+
+  const triggerInitiateCheckout = () => {
+    if (!hasInitiatedCheckoutRef.current && product) {
+      hasInitiatedCheckoutRef.current = true;
+      trackClientEvent("begin_checkout", {
+        value: subtotal,
+        items: [
+          {
+            item_id: product.id,
+            item_name: product.name,
+            item_brand: "CanvasBag",
+            item_variant: activeVariant ? activeVariant.name : "Standard",
+            price: activePrice,
+            quantity,
+          },
+        ],
+      });
+    }
+  };
+
+  const handleShippingChange = (zone: "Inside Dhaka" | "Outside Dhaka") => {
+    setShippingZone(zone);
+    triggerInitiateCheckout();
+    if (product) {
+      trackClientEvent("add_shipping_info", {
+        value: subtotal,
+        shipping_zone: zone,
+        items: [
+          {
+            item_id: product.id,
+            item_name: product.name,
+            item_brand: "CanvasBag",
+            item_variant: activeVariant ? activeVariant.name : "Standard",
+            price: activePrice,
+            quantity,
+          },
+        ],
+      });
+    }
+  };
 
   // Fire view_item on mount
   useEffect(() => {
@@ -114,6 +156,25 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
 
       const data = await res.json();
       if (data.success && data.orderId) {
+        // Save pending order details in localStorage for client-side Pixel/GA4 attribution on success page
+        const pendingOrder = {
+          orderId: data.orderId,
+          name: name.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          shippingZone,
+          subtotal,
+          deliveryFee,
+          discount,
+          total: data.total || total,
+          items: cartItems,
+        };
+        try {
+          localStorage.setItem("cb_pending_order", JSON.stringify(pendingOrder));
+        } catch (err) {
+          console.warn("Storage write error", err);
+        }
+
         toast.success("অর্ডার সফলভাবে সম্পন্ন হয়েছে!");
         router.push(`/order/success/${data.orderId}`);
       } else {
@@ -499,6 +560,7 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
                                 type="text"
                                 required
                                 value={name}
+                                onFocus={triggerInitiateCheckout}
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="নাম লিখুন"
                                 className="rounded-xl h-11 px-4 border border-slate-200 focus:outline-none focus:border-[var(--primary)] text-slate-800 text-sm font-medium bg-white"
@@ -514,6 +576,7 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
                                 required
                                 maxLength={11}
                                 value={phone}
+                                onFocus={triggerInitiateCheckout}
                                 onChange={(e) => {
                                   setPhone(e.target.value);
                                   if (phoneError) setPhoneError("");
@@ -541,6 +604,7 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
                                 type="text"
                                 required
                                 value={address}
+                                onFocus={triggerInitiateCheckout}
                                 onChange={(e) => setAddress(e.target.value)}
                                 placeholder="e.g. বাড়ি নং ১২, রোড ৪, ধানমন্ডি, ঢাকা"
                                 className="rounded-xl h-11 px-4 border border-slate-200 focus:outline-none focus:border-[var(--primary)] text-slate-800 text-sm font-medium bg-white"
@@ -552,6 +616,7 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
                               <textarea
                                 rows={2}
                                 value={note}
+                                onFocus={triggerInitiateCheckout}
                                 onChange={(e) => setNote(e.target.value)}
                                 placeholder="Write any specific instructions..."
                                 className="rounded-xl p-3 border border-slate-200 focus:outline-none focus:border-[var(--primary)] text-slate-800 text-sm font-medium bg-white resize-none"
@@ -575,7 +640,7 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
                             {/* Shipping Radios */}
                             <div className="grid gap-2 py-2">
                               <label
-                                onClick={() => setShippingZone("Inside Dhaka")}
+                                onClick={() => handleShippingChange("Inside Dhaka")}
                                 className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer select-none transition-all shadow-xs ${
                                   shippingZone === "Inside Dhaka"
                                     ? "border-[var(--primary)] bg-white ring-1 ring-[var(--primary)]"
@@ -592,13 +657,13 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
                                   type="radio"
                                   name="lp_zone"
                                   checked={shippingZone === "Inside Dhaka"}
-                                  onChange={() => setShippingZone("Inside Dhaka")}
+                                  onChange={() => handleShippingChange("Inside Dhaka")}
                                   className="h-4 w-4 text-[var(--primary)]"
                                 />
                               </label>
 
                               <label
-                                onClick={() => setShippingZone("Outside Dhaka")}
+                                onClick={() => handleShippingChange("Outside Dhaka")}
                                 className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer select-none transition-all shadow-xs ${
                                   shippingZone === "Outside Dhaka"
                                     ? "border-[var(--primary)] bg-white ring-1 ring-[var(--primary)]"
@@ -615,7 +680,7 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
                                   type="radio"
                                   name="lp_zone"
                                   checked={shippingZone === "Outside Dhaka"}
-                                  onChange={() => setShippingZone("Outside Dhaka")}
+                                  onChange={() => handleShippingChange("Outside Dhaka")}
                                   className="h-4 w-4 text-[var(--primary)]"
                                 />
                               </label>

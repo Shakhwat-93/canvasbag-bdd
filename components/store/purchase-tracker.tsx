@@ -10,7 +10,7 @@ interface PurchaseTrackerProps {
   orderId: string;
 }
 
-export function PurchaseTracker({ order, orderId }: PurchaseTrackerProps) {
+export function PurchaseTracker({ order: initialOrder, orderId }: PurchaseTrackerProps) {
   const { clearCart } = useCart();
   const hasExecutedRef = useRef(false);
 
@@ -26,6 +26,48 @@ export function PurchaseTracker({ order, orderId }: PurchaseTrackerProps) {
     const trackKey = `purchase_tracked_${orderId}`;
     if (typeof window !== "undefined" && localStorage.getItem(trackKey)) {
       return;
+    }
+
+    let order = initialOrder;
+
+    // Fallback: If server couldn't retrieve order details (e.g. fresh lambda container), load from localStorage
+    if ((!order || !order.total || !order.items || order.items.length === 0) && typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("cb_pending_order");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.orderId === orderId || !parsed.orderId) {
+            order = {
+              id: orderId,
+              customer_name: parsed.name || initialOrder?.customer_name || "Customer",
+              phone: parsed.phone || initialOrder?.phone || "",
+              city: parsed.shippingZone === "Outside Dhaka" ? "Outside Dhaka" : "Dhaka",
+              area: "N/A",
+              address: parsed.address || initialOrder?.address || "",
+              note: parsed.note,
+              status: "pending",
+              payment_method: "cod",
+              subtotal: Number(parsed.subtotal || parsed.total || 0),
+              delivery_fee: Number(parsed.deliveryFee || 0),
+              discount: Number(parsed.discount || 0),
+              total: Number(parsed.total || 0),
+              items: (parsed.items || []).map((i: any, idx: number) => ({
+                id: `item-${idx}`,
+                order_id: orderId,
+                product_id: i.productId || i.id,
+                product_name: i.name,
+                variant_name: i.variantName || "Standard",
+                quantity: Number(i.quantity || 1),
+                unit_price: Number(i.price || 0),
+                total: Number(i.price || 0) * Number(i.quantity || 1),
+              })),
+              created_at: new Date().toISOString(),
+            };
+          }
+        }
+      } catch (err) {
+        console.warn("[PurchaseTracker] Error parsing cb_pending_order:", err);
+      }
     }
 
     if (typeof window !== "undefined") {
@@ -76,7 +118,7 @@ export function PurchaseTracker({ order, orderId }: PurchaseTrackerProps) {
         localStorage.removeItem("cb_pending_order");
       }
     } catch {}
-  }, [clearCart, order, orderId]);
+  }, [clearCart, initialOrder, orderId]);
 
   return null;
 }

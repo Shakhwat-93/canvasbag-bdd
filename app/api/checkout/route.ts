@@ -210,12 +210,20 @@ export async function POST(req: NextRequest) {
       const userAgent = req.headers.get("user-agent") || undefined;
       const fbp = req.cookies.get("_fbp")?.value;
       const fbc = req.cookies.get("_fbc")?.value;
-      await sendMetaPurchaseEvent(localOrder, items, {
-        ip,
-        userAgent,
-        fbp,
-        fbc,
-      });
+      const origin = req.headers.get("origin") || req.headers.get("referer") || process.env.NEXT_PUBLIC_APP_URL || "https://canvasbagbd.com";
+      await sendMetaPurchaseEvent(
+        {
+          ...localOrder,
+          fullUrl: `${origin.replace(/\/$/, "")}/checkout`,
+        },
+        items,
+        {
+          ip,
+          userAgent,
+          fbp,
+          fbc,
+        }
+      );
     } catch (e) {
       console.warn("[Meta CAPI Error]", e);
     }

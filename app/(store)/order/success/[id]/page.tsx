@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, Truck } from "lucide-react";
 import { getLocalOrderById } from "@/lib/db";
+import { supabaseOrdersService } from "@/lib/supabase";
 import { formatBDT } from "@/lib/format";
 import { PurchaseTracker } from "@/components/store/purchase-tracker";
 import type { LocalOrder } from "@/lib/types";
@@ -23,6 +24,61 @@ export default async function OrderSuccessPage({ params }: OrderSuccessPageProps
     order = getLocalOrderById(orderId);
   } catch (e) {
     console.warn("[OrderSuccessPage] Could not load local order:", e);
+  }
+
+  // Fallback to Supabase orders table for serverless environments (Vercel)
+  if (!order) {
+    try {
+      const remote = await supabaseOrdersService.getOrderById(orderId);
+      if (remote) {
+        order = {
+          id: remote.id,
+          customer_name: remote.customer_name || "Customer",
+          phone: remote.phone,
+          city: (remote as any).city || (remote.shipping_zone === "Outside Dhaka" ? "Outside Dhaka" : "Dhaka"),
+          area: "N/A",
+          address: remote.address,
+          note: remote.notes || undefined,
+          status: (remote.status?.toLowerCase() as any) || "pending",
+          payment_method: "cod",
+          subtotal: remote.amount,
+          delivery_fee: remote.shipping_zone === "Outside Dhaka" ? 150 : 70,
+          discount: 0,
+          total: remote.amount,
+          created_at: remote.created_at || new Date().toISOString(),
+          items:
+            remote.ordered_items && remote.ordered_items.length > 0
+              ? remote.ordered_items.map((i, idx) => ({
+                  id: idx + 1,
+                  order_id: remote.id,
+                  product_id: `prod-${idx}`,
+                  product_name: i.name,
+                  variant_id: "standard",
+                  variant_name: "Standard",
+                  quantity: i.quantity || 1,
+                  unit_price: i.price,
+                  total: (i.price || 0) * (i.quantity || 1),
+                }))
+              : remote.product_name
+              ? [
+                  {
+                    id: 1,
+                    order_id: remote.id,
+                    product_id: `prod-0`,
+                    product_name: remote.product_name,
+                    variant_id: "standard",
+                    variant_name: "Standard",
+                    quantity: remote.quantity || 1,
+                    unit_price: remote.amount,
+                    total: remote.amount,
+                  },
+                ]
+              : [],
+        };
+      }
+    } catch (err) {
+      console.warn("[OrderSuccessPage] Supabase order fallback error:", err);
+    }
   }
 
   return (
