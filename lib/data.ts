@@ -366,7 +366,7 @@ export const defaultSettings: import("@/lib/types").SiteSettings = {
   gtmId: "",
   ga4Id: "",
   pixelId: "",
-  fbTestCode: "TEST79130",
+  fbTestCode: "TEST99138",
   duplicateBlockHours: 6,
   heroMobileFourCards: true,
   shippingInsideDhaka: 60,

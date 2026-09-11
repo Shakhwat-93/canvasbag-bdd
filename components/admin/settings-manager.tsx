@@ -990,7 +990,7 @@ export function SettingsManager({ initialSettings }: SettingsManagerProps) {
               type="text"
               value={settings.fbTestCode || ""}
               onChange={(e) => setSettings({ ...settings, fbTestCode: e.target.value })}
-              placeholder="TEST79130"
+              placeholder="TEST99138"
               className="w-full h-10 px-3 mt-1.5 rounded-xl border border-slate-200 text-xs font-mono font-bold bg-white shadow-2xs"
             />
           </div>
