@@ -55,7 +55,30 @@ function safeFbqTrack(
 }
 
 /**
- * Track route change / PageView across GTM, GA4, and Meta Pixel
+ * Dispatch event to internal server-side Conversions API proxy
+ */
+async function dispatchServerEvent(params: {
+  eventName: string;
+  eventId: string;
+  eventSourceUrl?: string;
+  userData?: Record<string, any>;
+  customData?: Record<string, any>;
+}) {
+  if (typeof window === "undefined") return;
+  try {
+    fetch("/api/analytics/capi", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+      keepalive: true,
+    }).catch((err) => {
+      console.warn("[Analytics] CAPI background dispatch failed:", err);
+    });
+  } catch {}
+}
+
+/**
+ * Track route change / PageView across GTM, GA4, and Meta Pixel + CAPI
  */
 export function trackPageView(pagePath?: string) {
   if (typeof window === "undefined") return;
@@ -73,6 +96,7 @@ export function trackPageView(pagePath?: string) {
   lastFiredEvents[dedupeKey] = now;
 
   const testCode = getFbTestCode();
+  const eventId = `pv_${now}_${Math.random().toString(36).substring(2, 7)}`;
 
   // 1. Google Tag Manager (GTM)
   window.dataLayer = window.dataLayer || [];
@@ -93,12 +117,22 @@ export function trackPageView(pagePath?: string) {
   }
 
   // 3. Meta Pixel (fbq)
-  const eventOptions: Record<string, any> = {};
+  const eventOptions: Record<string, any> = {
+    eventID: eventId,
+  };
   if (testCode) {
     eventOptions.test_event_code = testCode;
   }
 
   safeFbqTrack("PageView", {}, eventOptions);
+
+  // 4. Meta Conversions API (Server-Side)
+  dispatchServerEvent({
+    eventName: "PageView",
+    eventId,
+    eventSourceUrl: fullUrl,
+    customData: {},
+  });
 }
 
 /**
@@ -184,7 +218,7 @@ export function trackClientEvent(name: string, payload: Record<string, any> = {}
     window.gtag("event", name, gtagPayload);
   }
 
-  // 4. Meta Pixel (fbq) tracking with full standard parameters
+  // 4. Meta Pixel (fbq) & Server-Side CAPI tracking with full standard parameters
   const pixelNameMap: Record<string, string> = {
     view_item: "ViewContent",
     add_to_cart: "AddToCart",
@@ -240,11 +274,27 @@ export function trackClientEvent(name: string, payload: Record<string, any> = {}
     }
 
     const testCode = getFbTestCode();
-    const eventOptions: Record<string, any> = {};
 
+    // Generate shared eventId for browser/server deduplication
+    let eventId: string;
     if (name === "purchase" && payload.order_id) {
-      eventOptions.eventID = `order_${payload.order_id}`;
+      eventId = `order_${payload.order_id}`;
+    } else if (name === "view_item") {
+      eventId = `vc_${contentIds[0] || "item"}_${now}_${Math.random().toString(36).substring(2, 6)}`;
+    } else if (name === "add_to_cart") {
+      eventId = `atc_${contentIds[0] || "item"}_${now}_${Math.random().toString(36).substring(2, 6)}`;
+    } else if (name === "begin_checkout") {
+      eventId = `ic_${now}_${Math.random().toString(36).substring(2, 6)}`;
+    } else if (name === "add_shipping_info") {
+      eventId = `asi_${now}_${Math.random().toString(36).substring(2, 6)}`;
+    } else {
+      eventId = `ev_${now}_${Math.random().toString(36).substring(2, 6)}`;
     }
+
+    const eventOptions: Record<string, any> = {
+      eventID: eventId,
+    };
+
     if (testCode) {
       eventOptions.test_event_code = testCode;
       pixelPayload.test_event_code = testCode;
@@ -265,6 +315,25 @@ export function trackClientEvent(name: string, payload: Record<string, any> = {}
       } catch {}
     }
 
+    // 1. Fire Client Browser Pixel
     safeFbqTrack(pixelName, pixelPayload, eventOptions);
+
+    // 2. Fire Server-Side Conversions API (CAPI) for non-purchase events
+    // (Purchase CAPI is directly handled on the backend during order creation in /api/checkout)
+    if (name !== "purchase") {
+      dispatchServerEvent({
+        eventName: pixelName,
+        eventId,
+        eventSourceUrl: window.location.href,
+        customData: pixelPayload,
+        userData: payload.user_data
+          ? {
+              phone: payload.user_data.phone_number,
+              name: payload.customer_info?.name || payload.user_data.address?.first_name,
+              city: payload.customer_info?.city || payload.user_data.address?.city,
+            }
+          : undefined,
+      });
+    }
   }
 }
