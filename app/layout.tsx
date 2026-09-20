@@ -125,8 +125,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             __html: `
               window.dataLayer = window.dataLayer || [];
               window.fbTestCode = "${fbTestCode}";
-              var initialPvId = "pv_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-              window.__initialPvId = initialPvId;
               ${
                 pixelId
                   ? `
@@ -139,7 +137,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               s.parentNode.insertBefore(t,s)}(window, document,'script',
               'https://connect.facebook.net/en_US/fbevents.js');
               fbq('init', '${pixelId}');
-              fbq('track', 'PageView', {}, { eventID: initialPvId });
               `
                   : ""
               }

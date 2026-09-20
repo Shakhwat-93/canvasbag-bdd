@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -31,9 +31,11 @@ export default function CheckoutPage() {
   const deliveryFee = isFreeShipping ? 0 : shippingZone === "Inside Dhaka" ? shippingInsideFee : shippingOutsideFee;
   const total = Math.max(subtotal + deliveryFee - discount, 0);
 
-  // Trigger begin_checkout on mount
+  // Trigger begin_checkout strictly once per checkout session
+  const hasTrackedCheckoutRef = useRef(false);
   useEffect(() => {
-    if (items.length > 0) {
+    if (items.length > 0 && !hasTrackedCheckoutRef.current) {
+      hasTrackedCheckoutRef.current = true;
       trackClientEvent("begin_checkout", {
         value: subtotal,
         items: items.map((item) => ({
@@ -50,6 +52,7 @@ export default function CheckoutPage() {
 
   // Handle shipping zone change
   const handleShippingChange = (zone: "Inside Dhaka" | "Outside Dhaka") => {
+    if (zone === shippingZone) return;
     setShippingZone(zone);
     trackClientEvent("add_shipping_info", {
       value: subtotal,

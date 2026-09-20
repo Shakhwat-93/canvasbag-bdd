@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -73,22 +73,26 @@ export function ProductView({ product, reviews: initialReviews, settings, relate
     ? !activeVariant.inStock && !(activeVariant as any).in_stock
     : false;
 
-  // Fire view_item event on mount and when variant changes
+  // Fire view_item event strictly once per product view
+  const hasTrackedProductRef = useRef<string | null>(null);
   useEffect(() => {
-    trackClientEvent("view_item", {
-      value: activePrice,
-      items: [
-        {
-          item_id: product.id,
-          item_name: product.name,
-          item_brand: "CanvasBag",
-          item_category: product.categoryName || product.categorySlug || "",
-          item_variant: activeVariant ? activeVariant.name : "Standard",
-          price: activePrice,
-          quantity: 1,
-        },
-      ],
-    });
+    if (product && hasTrackedProductRef.current !== product.id) {
+      hasTrackedProductRef.current = product.id;
+      trackClientEvent("view_item", {
+        value: activePrice,
+        items: [
+          {
+            item_id: product.id,
+            item_name: product.name,
+            item_brand: "CanvasBag",
+            item_category: product.categoryName || product.categorySlug || "",
+            item_variant: activeVariant ? activeVariant.name : "Standard",
+            price: activePrice,
+            quantity: 1,
+          },
+        ],
+      });
+    }
   }, [product, activeVariant, activePrice]);
 
   // Handle variant selection

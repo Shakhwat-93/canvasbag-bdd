@@ -6,12 +6,14 @@ declare global {
     gtag?: (...args: any[]) => void;
     fbq?: (...args: any[]) => void;
     fbTestCode?: string;
-    __initialPvId?: string;
     userIp?: string;
   }
 }
 
+// In-memory deduplication registry
 const lastFiredEvents: Record<string, number> = {};
+const firedFbqEventIds = new Set<string>();
+const firedCapiEventIds = new Set<string>();
 
 const META_STANDARD_EVENTS = new Set([
   "AddPaymentInfo",
@@ -35,43 +37,55 @@ const META_STANDARD_EVENTS = new Set([
 ]);
 
 /**
- * Resilient fbq invoker that retries if fbevents.js has not finished initializing.
+ * Safe fbq invoker that prevents duplicate firing by eventID
+ * and accurately routes standard vs custom events.
  */
 function safeFbqTrack(
   pixelName: string,
   pixelPayload: Record<string, any> = {},
-  eventOptions?: Record<string, any>,
-  retries = 10
+  eventOptions?: Record<string, any>
 ) {
   if (typeof window === "undefined") return;
 
-  if (typeof window.fbq === "function") {
-    try {
-      const isStandard = META_STANDARD_EVENTS.has(pixelName);
-      const trackMethod = isStandard ? "track" : "trackCustom";
-      if (eventOptions && eventOptions.eventID) {
-        window.fbq(trackMethod, pixelName, pixelPayload, { eventID: eventOptions.eventID });
-      } else if (Object.keys(pixelPayload).length > 0) {
-        window.fbq(trackMethod, pixelName, pixelPayload);
-      } else {
-        window.fbq(trackMethod, pixelName);
-      }
-      console.log(
-        `%c[Meta Pixel Browser] Tracked (${trackMethod}) ${pixelName}`,
-        "color: #1877F2; font-weight: bold;",
-        pixelPayload,
-        eventOptions
-      );
-    } catch (err) {
-      console.warn(`[Meta Pixel Browser] Error firing ${pixelName}:`, err);
+  const eventId = eventOptions?.eventID;
+  if (eventId) {
+    if (firedFbqEventIds.has(eventId)) {
+      console.log(`[Meta Pixel Browser] Skipped duplicate eventID: ${eventId}`);
+      return;
     }
-    return;
+    firedFbqEventIds.add(eventId);
   }
 
-  if (retries > 0) {
-    setTimeout(() => {
-      safeFbqTrack(pixelName, pixelPayload, eventOptions, retries - 1);
-    }, 250);
+  const isStandard = META_STANDARD_EVENTS.has(pixelName);
+  const trackMethod = isStandard ? "track" : "trackCustom";
+
+  const executeTrack = () => {
+    if (typeof window.fbq === "function") {
+      try {
+        if (eventId) {
+          window.fbq(trackMethod, pixelName, pixelPayload, { eventID: eventId });
+        } else if (Object.keys(pixelPayload).length > 0) {
+          window.fbq(trackMethod, pixelName, pixelPayload);
+        } else {
+          window.fbq(trackMethod, pixelName);
+        }
+        console.log(
+          `%c[Meta Pixel Browser] Tracked (${trackMethod}) ${pixelName}`,
+          "color: #1877F2; font-weight: bold;",
+          pixelPayload,
+          eventOptions
+        );
+      } catch (err) {
+        console.warn(`[Meta Pixel Browser] Error firing ${pixelName}:`, err);
+      }
+    }
+  };
+
+  if (typeof window.fbq === "function") {
+    executeTrack();
+  } else {
+    // Retry once after 200ms if script is still parsing
+    setTimeout(executeTrack, 200);
   }
 }
 
@@ -86,6 +100,14 @@ async function dispatchServerEvent(params: {
   customData?: Record<string, any>;
 }) {
   if (typeof window === "undefined") return;
+
+  if (params.eventId) {
+    if (firedCapiEventIds.has(params.eventId)) {
+      return;
+    }
+    firedCapiEventIds.add(params.eventId);
+  }
+
   try {
     fetch("/api/analytics/capi", {
       method: "POST",
@@ -99,7 +121,8 @@ async function dispatchServerEvent(params: {
 }
 
 /**
- * Track route change / PageView across GTM, GA4, and Meta Pixel + CAPI
+ * Track route change / PageView across GTM, GA4, and Meta Pixel + CAPI.
+ * Fires strictly once per page navigation.
  */
 export function trackPageView(pagePath?: string) {
   if (typeof window === "undefined") return;
@@ -108,10 +131,10 @@ export function trackPageView(pagePath?: string) {
   const fullUrl = window.location.href;
   const pageTitle = typeof document !== "undefined" ? document.title : "";
 
-  // Deduplication check: max once per 800ms for exact same path
+  // Deduplication check: max once per 1500ms for exact same path
   const now = Date.now();
   const dedupeKey = `page_view_${currentPath}`;
-  if (lastFiredEvents[dedupeKey] && now - lastFiredEvents[dedupeKey] < 800) {
+  if (lastFiredEvents[dedupeKey] && now - lastFiredEvents[dedupeKey] < 1500) {
     return;
   }
   lastFiredEvents[dedupeKey] = now;
@@ -134,16 +157,9 @@ export function trackPageView(pagePath?: string) {
     });
   }
 
-  // 3. Meta Pixel (fbq) & Server CAPI Deduplication
-  let eventId: string;
-  if (window.__initialPvId) {
-    eventId = window.__initialPvId;
-    window.__initialPvId = undefined;
-    // Initial PageView was already queued synchronously in <head> with this exact eventID
-  } else {
-    eventId = `pv_${now}_${Math.random().toString(36).substring(2, 7)}`;
-    safeFbqTrack("PageView", {}, { eventID: eventId });
-  }
+  // 3. Meta Pixel (fbq) & Server CAPI with single matching eventId
+  const eventId = `pv_${now}_${Math.random().toString(36).substring(2, 7)}`;
+  safeFbqTrack("PageView", {}, { eventID: eventId });
 
   // 4. Meta Conversions API (Server-Side)
   dispatchServerEvent({
@@ -160,35 +176,56 @@ export function trackPageView(pagePath?: string) {
 export function trackClientEvent(name: string, payload: Record<string, any> = {}) {
   if (typeof window === "undefined") return;
 
-  // 1. Deduplication Logic
-  let dedupeKey = `${name}`;
+  // 1. Stable Deduplication Logic
+  let dedupeKey = name;
+  let timeLimit = 1000;
+
   if (name === "purchase" && payload.order_id) {
     dedupeKey = `purchase_${payload.order_id}`;
+    timeLimit = 86400000; // 24 hours lock
+  } else if (name === "begin_checkout") {
+    // Key by item IDs only, independent of calculated subtotal/fees
+    const itemIds = (payload.items || [])
+      .map((i: any) => String(i.item_id || i.id || ""))
+      .sort()
+      .join("_");
+    dedupeKey = `begin_checkout_${itemIds || "cart"}`;
+    timeLimit = 10000; // 10s cooldown for checkout session
+  } else if (name === "add_to_cart") {
+    const primaryItem = (payload.items && payload.items[0]) || {};
+    const itemId = String(primaryItem.item_id || primaryItem.id || "");
+    const itemVariant = String(primaryItem.item_variant || primaryItem.variant || "");
+    dedupeKey = `add_to_cart_${itemId}_${itemVariant}`;
+    timeLimit = 1200; // Cooldown to block double clicks
+  } else if (name === "view_item") {
+    const primaryItem = (payload.items && payload.items[0]) || {};
+    const itemId = String(primaryItem.item_id || primaryItem.id || "");
+    dedupeKey = `view_item_${itemId}`;
+    timeLimit = 5000; // 5s cooldown per product view
   } else if (name === "add_shipping_info") {
-    dedupeKey = `add_shipping_info_${payload.shipping_zone || ""}_${payload.value || 0}`;
+    dedupeKey = `add_shipping_info_${payload.shipping_zone || ""}`;
+    timeLimit = 2000;
   } else {
-    const itemsKey = payload.items
-      ? payload.items
-          .map((i: any) => `${i.item_id || i.id || ""}_${i.item_variant || i.variant || ""}`)
-          .join("_")
-      : "";
-    dedupeKey = `${name}_${payload.value || 0}_${itemsKey}`;
+    const itemsKey = (payload.items || [])
+      .map((i: any) => `${i.item_id || i.id || ""}_${i.item_variant || i.variant || ""}`)
+      .join("_");
+    dedupeKey = `${name}_${itemsKey}`;
+    timeLimit = 1500;
   }
 
   const now = Date.now();
   const lastFiredTime = lastFiredEvents[dedupeKey];
-  const timeLimit = name === "view_item" || name === "begin_checkout" ? 3000 : 800;
-
   if (lastFiredTime && now - lastFiredTime < timeLimit) {
+    console.log(`[Analytics] Blocked duplicate ${name} (${dedupeKey})`);
     return;
   }
-
   lastFiredEvents[dedupeKey] = now;
 
   // Extra persistent check for purchase event to prevent re-fires on page refresh
   if (name === "purchase" && payload.order_id) {
-    const persistKey = `gtm_purchase_tracked_${payload.order_id}`;
+    const persistKey = `meta_purchase_tracked_${payload.order_id}`;
     if (localStorage.getItem(persistKey)) {
+      console.log(`[Analytics] Purchase already tracked: ${payload.order_id}`);
       return;
     }
     localStorage.setItem(persistKey, "true");

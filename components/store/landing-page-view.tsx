@@ -77,6 +77,7 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
   };
 
   const handleShippingChange = (zone: "Inside Dhaka" | "Outside Dhaka") => {
+    if (zone === shippingZone) return;
     setShippingZone(zone);
     triggerInitiateCheckout();
     if (product) {
@@ -97,9 +98,11 @@ export function LandingPageView({ page, products, settings }: LandingPageViewPro
     }
   };
 
-  // Fire view_item on mount
+  // Fire view_item strictly once per product on mount
+  const hasTrackedViewRef = useRef<string | null>(null);
   useEffect(() => {
-    if (product) {
+    if (product && hasTrackedViewRef.current !== product.id) {
+      hasTrackedViewRef.current = product.id;
       trackClientEvent("view_item", {
         value: activePrice,
         items: [
