@@ -51,9 +51,9 @@ function getThemeStyles(color: string) {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await supabaseCatalogService.getSettings();
 
-  const gtmId = (settings.gtmId || "").trim();
-  const ga4Id = (settings.ga4Id || process.env.GA4_MEASUREMENT_ID || "").trim();
-  const pixelId = (settings.pixelId || process.env.FACEBOOK_PIXEL_ID || "").trim();
+  const gtmId = (settings.gtmId || process.env.NEXT_PUBLIC_GTM_ID || "GTM-PVHHM8CX").trim();
+  const ga4Id = (settings.ga4Id || process.env.GA4_MEASUREMENT_ID || "G-KF0PE2GR6K").trim();
+  const pixelId = (settings.pixelId || process.env.FACEBOOK_PIXEL_ID || "1614327189772228").trim();
   const fbTestCode = (settings.fbTestCode?.trim() ? settings.fbTestCode : (process.env.FACEBOOK_TEST_EVENT_CODE || "TEST99138")).trim();
   const savedTheme = settings.themeColor || "gradient:#ff804e,#ff6b35,light";
 
@@ -119,12 +119,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }}
         />
 
-        {/* Synchronous Base Analytics Initialization (dataLayer, fbTestCode, fbq stub) */}
+        {/* Synchronous Base Analytics & Meta Pixel Initialization */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
               window.fbTestCode = "${fbTestCode}";
+              var initialPvId = "pv_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+              window.__initialPvId = initialPvId;
               ${
                 pixelId
                   ? `
@@ -137,6 +139,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               s.parentNode.insertBefore(t,s)}(window, document,'script',
               'https://connect.facebook.net/en_US/fbevents.js');
               fbq('init', '${pixelId}');
+              fbq('track', 'PageView', {}, { eventID: initialPvId });
               `
                   : ""
               }

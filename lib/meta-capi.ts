@@ -36,8 +36,8 @@ export interface MetaServerEventParams {
 export async function sendMetaServerEvent(params: MetaServerEventParams): Promise<boolean> {
   try {
     const settings = await getCatalogSettings();
-    const pixelId = (settings.pixelId || process.env.FACEBOOK_PIXEL_ID || "").trim();
-    const accessToken = (settings.fbAccessToken || process.env.FACEBOOK_ACCESS_TOKEN || "").trim();
+    const pixelId = (settings.pixelId || process.env.FACEBOOK_PIXEL_ID || "1614327189772228").trim();
+    const accessToken = (settings.fbAccessToken || process.env.FACEBOOK_ACCESS_TOKEN || "EAA9aZA7khMiYBSZAjid32RiNRFJrtCJa3XhQDXpfzVVYLWNrFZCOS7cxslQlhCNHgepBkvcrr85ZBnKQdyoqaupbVLqZBmuK0ZBqIyN5XasKrvII2kZBdoCuwXvDYfFE1PNuUdaI6wj2tyKcKaIgqLdp1ZAZB6Op8vSTrUjwxXSnqGEecXH7a5lMpEY7kTgm95gZDZD").trim();
     const testCode = (settings.fbTestCode?.trim() ? settings.fbTestCode : (process.env.FACEBOOK_TEST_EVENT_CODE || "TEST99138")).trim();
 
     if (!pixelId || !accessToken) {

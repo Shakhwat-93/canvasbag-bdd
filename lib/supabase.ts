@@ -44,7 +44,10 @@ export async function getCatalogSettings(): Promise<SiteSettings> {
     if (res.ok) {
       const rows = await res.json();
       if (rows?.[0]?.data && Object.keys(rows[0].data).length > 0) {
-        return rows[0].data as SiteSettings;
+        return {
+          ...defaultSettings,
+          ...rows[0].data,
+        } as SiteSettings;
       }
     }
   } catch (e) {

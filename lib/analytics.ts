@@ -6,43 +6,41 @@ declare global {
     gtag?: (...args: any[]) => void;
     fbq?: (...args: any[]) => void;
     fbTestCode?: string;
+    __initialPvId?: string;
     userIp?: string;
   }
 }
 
 const lastFiredEvents: Record<string, number> = {};
 
-function getFbTestCode(): string {
-  if (typeof window !== "undefined" && window.fbTestCode && window.fbTestCode.trim() !== "") {
-    return window.fbTestCode.trim();
-  }
-  return "TEST99138";
-}
-
 /**
  * Resilient fbq invoker that retries if fbevents.js has not finished initializing.
  */
 function safeFbqTrack(
   pixelName: string,
-  pixelPayload: Record<string, any>,
-  eventOptions: Record<string, any>,
+  pixelPayload: Record<string, any> = {},
+  eventOptions?: Record<string, any>,
   retries = 10
 ) {
   if (typeof window === "undefined") return;
 
   if (typeof window.fbq === "function") {
     try {
-      window.fbq("track", pixelName, pixelPayload, eventOptions);
-      if (process.env.NODE_ENV !== "production" || eventOptions.test_event_code) {
-        console.log(
-          `%c[Meta Pixel] Tracked ${pixelName}`,
-          "color: #1877F2; font-weight: bold;",
-          pixelPayload,
-          eventOptions
-        );
+      if (eventOptions && eventOptions.eventID) {
+        window.fbq("track", pixelName, pixelPayload, { eventID: eventOptions.eventID });
+      } else if (Object.keys(pixelPayload).length > 0) {
+        window.fbq("track", pixelName, pixelPayload);
+      } else {
+        window.fbq("track", pixelName);
       }
+      console.log(
+        `%c[Meta Pixel Browser] Tracked ${pixelName}`,
+        "color: #1877F2; font-weight: bold;",
+        pixelPayload,
+        eventOptions
+      );
     } catch (err) {
-      console.warn(`[Meta Pixel] Error firing ${pixelName}:`, err);
+      console.warn(`[Meta Pixel Browser] Error firing ${pixelName}:`, err);
     }
     return;
   }
@@ -95,9 +93,6 @@ export function trackPageView(pagePath?: string) {
   }
   lastFiredEvents[dedupeKey] = now;
 
-  const testCode = getFbTestCode();
-  const eventId = `pv_${now}_${Math.random().toString(36).substring(2, 7)}`;
-
   // 1. Google Tag Manager (GTM)
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({
@@ -116,15 +111,16 @@ export function trackPageView(pagePath?: string) {
     });
   }
 
-  // 3. Meta Pixel (fbq)
-  const eventOptions: Record<string, any> = {
-    eventID: eventId,
-  };
-  if (testCode) {
-    eventOptions.test_event_code = testCode;
+  // 3. Meta Pixel (fbq) & Server CAPI Deduplication
+  let eventId: string;
+  if (window.__initialPvId) {
+    eventId = window.__initialPvId;
+    window.__initialPvId = undefined;
+    // Initial PageView was already queued synchronously in <head> with this exact eventID
+  } else {
+    eventId = `pv_${now}_${Math.random().toString(36).substring(2, 7)}`;
+    safeFbqTrack("PageView", {}, { eventID: eventId });
   }
-
-  safeFbqTrack("PageView", {}, eventOptions);
 
   // 4. Meta Conversions API (Server-Side)
   dispatchServerEvent({
@@ -273,8 +269,6 @@ export function trackClientEvent(name: string, payload: Record<string, any> = {}
       pixelPayload.shipping_tier = payload.shipping_zone;
     }
 
-    const testCode = getFbTestCode();
-
     // Generate shared eventId for browser/server deduplication
     let eventId: string;
     if (name === "purchase" && payload.order_id) {
@@ -294,11 +288,6 @@ export function trackClientEvent(name: string, payload: Record<string, any> = {}
     const eventOptions: Record<string, any> = {
       eventID: eventId,
     };
-
-    if (testCode) {
-      eventOptions.test_event_code = testCode;
-      pixelPayload.test_event_code = testCode;
-    }
 
     // Advanced Matching user properties
     if (payload.user_data && typeof window.fbq === "function") {
