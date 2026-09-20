@@ -50,8 +50,7 @@ function getThemeStyles(color: string) {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await supabaseCatalogService.getSettings();
-
-  const gtmId = (settings.gtmId || process.env.NEXT_PUBLIC_GTM_ID || "GTM-PVHHM8CX").trim();
+  const gtmId = (settings.gtmId || process.env.NEXT_PUBLIC_GTM_ID || "").trim();
   const ga4Id = (settings.ga4Id || process.env.GA4_MEASUREMENT_ID || "G-KF0PE2GR6K").trim();
   const pixelId = (settings.pixelId || process.env.FACEBOOK_PIXEL_ID || "1614327189772228").trim();
   const fbTestCode = (settings.fbTestCode?.trim() ? settings.fbTestCode : (process.env.FACEBOOK_TEST_EVENT_CODE || "TEST99138")).trim();
@@ -119,7 +118,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }}
         />
 
-        {/* Synchronous Base Analytics & Meta Pixel Initialization */}
+        {/* Synchronous Base Analytics & Meta Pixel Initialization with Single-Source Protection */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -128,14 +127,35 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               ${
                 pixelId
                   ? `
-              !function(f,b,e,v,n,t,s)
-              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-              n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t,s)}(window, document,'script',
-              'https://connect.facebook.net/en_US/fbevents.js');
+              !function(f,b,e,v,n,t,s) {
+                if(f.fbq)return;
+                n=f.fbq=function(){
+                  var args = Array.prototype.slice.call(arguments);
+                  var cmd = args[0];
+                  // Guard 1: Prevent duplicate init for the same pixel ID
+                  if (cmd === 'init') {
+                    var pid = args[1];
+                    if (f.__cb_inited_pixels && f.__cb_inited_pixels[pid]) {
+                      return;
+                    }
+                    f.__cb_inited_pixels = f.__cb_inited_pixels || {};
+                    f.__cb_inited_pixels[pid] = true;
+                  }
+                  // Guard 2: Prevent GTM Simo template re-init and agent tampering
+                  if (cmd === 'set' && args[1] === 'agent' && typeof args[2] === 'string' && args[2].indexOf('tmSimo') !== -1) {
+                    return;
+                  }
+                  // Guard 3: Prevent duplicate external trackSingle calls (e.g. from GTM template)
+                  if (cmd === 'trackSingle' || cmd === 'trackSingleCustom') {
+                    return;
+                  }
+                  n.callMethod ? n.callMethod.apply(n,arguments) : n.queue.push(arguments);
+                };
+                if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+                n.queue=[];t=b.createElement(e);t.async=!0;
+                t.src=v;s=b.getElementsByTagName(e)[0];
+                s.parentNode.insertBefore(t,s);
+              }(window, document,'script', 'https://connect.facebook.net/en_US/fbevents.js');
               fbq('init', '${pixelId}');
               `
                   : ""
