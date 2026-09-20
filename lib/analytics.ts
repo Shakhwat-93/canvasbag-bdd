@@ -13,6 +13,27 @@ declare global {
 
 const lastFiredEvents: Record<string, number> = {};
 
+const META_STANDARD_EVENTS = new Set([
+  "AddPaymentInfo",
+  "AddToCart",
+  "AddToWishlist",
+  "CompleteRegistration",
+  "Contact",
+  "CustomizeProduct",
+  "Donate",
+  "FindLocation",
+  "InitiateCheckout",
+  "Lead",
+  "PageView",
+  "Purchase",
+  "Schedule",
+  "Search",
+  "StartTrial",
+  "SubmitApplication",
+  "Subscribe",
+  "ViewContent",
+]);
+
 /**
  * Resilient fbq invoker that retries if fbevents.js has not finished initializing.
  */
@@ -26,15 +47,17 @@ function safeFbqTrack(
 
   if (typeof window.fbq === "function") {
     try {
+      const isStandard = META_STANDARD_EVENTS.has(pixelName);
+      const trackMethod = isStandard ? "track" : "trackCustom";
       if (eventOptions && eventOptions.eventID) {
-        window.fbq("track", pixelName, pixelPayload, { eventID: eventOptions.eventID });
+        window.fbq(trackMethod, pixelName, pixelPayload, { eventID: eventOptions.eventID });
       } else if (Object.keys(pixelPayload).length > 0) {
-        window.fbq("track", pixelName, pixelPayload);
+        window.fbq(trackMethod, pixelName, pixelPayload);
       } else {
-        window.fbq("track", pixelName);
+        window.fbq(trackMethod, pixelName);
       }
       console.log(
-        `%c[Meta Pixel Browser] Tracked ${pixelName}`,
+        `%c[Meta Pixel Browser] Tracked (${trackMethod}) ${pixelName}`,
         "color: #1877F2; font-weight: bold;",
         pixelPayload,
         eventOptions

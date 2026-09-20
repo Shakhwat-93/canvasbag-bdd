@@ -97,8 +97,31 @@ function trackEvent(name, payload = {}) {
     purchase: "Purchase",
   };
 
+  const META_STANDARD_EVENTS = [
+    "AddPaymentInfo",
+    "AddToCart",
+    "AddToWishlist",
+    "CompleteRegistration",
+    "Contact",
+    "CustomizeProduct",
+    "Donate",
+    "FindLocation",
+    "InitiateCheckout",
+    "Lead",
+    "PageView",
+    "Purchase",
+    "Schedule",
+    "Search",
+    "StartTrial",
+    "SubmitApplication",
+    "Subscribe",
+    "ViewContent",
+  ];
+
   const pixelName = pixelNameMap[name];
   if (pixelName && window.fbq) {
+    const isStandard = META_STANDARD_EVENTS.indexOf(pixelName) !== -1;
+    const trackMethod = isStandard ? "track" : "trackCustom";
     const pixelPayload = {
       value: payload.value,
       currency: "BDT",
@@ -134,9 +157,9 @@ function trackEvent(name, payload = {}) {
         ct: payload.user_data.address?.city?.toLowerCase(),
         co: "bd",
       };
-      window.fbq("track", pixelName, pixelPayload, eventOptions);
+      window.fbq(trackMethod, pixelName, pixelPayload, eventOptions);
     } else {
-      window.fbq("track", pixelName, pixelPayload, eventOptions);
+      window.fbq(trackMethod, pixelName, pixelPayload, eventOptions);
     }
   }
 }

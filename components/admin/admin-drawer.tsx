@@ -19,13 +19,35 @@ export function AdminDrawer({
   pendingReviewsCount = 0,
   ordersCount = 0,
 }: AdminDrawerProps) {
-  // Lock body scroll when drawer is open
+  const previousActiveElementRef = React.useRef<HTMLElement | null>(null);
+  const closeBtnRef = React.useRef<HTMLButtonElement>(null);
+
+  const handleClose = React.useCallback(() => {
+    if (
+      previousActiveElementRef.current &&
+      document.body.contains(previousActiveElementRef.current) &&
+      typeof previousActiveElementRef.current.focus === "function"
+    ) {
+      previousActiveElementRef.current.focus();
+    }
+    onClose();
+  }, [onClose]);
+
+  // Lock body scroll and manage focus when drawer opens
   useEffect(() => {
     if (isOpen) {
+      if (document.activeElement instanceof HTMLElement) {
+        previousActiveElementRef.current = document.activeElement;
+      }
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
+      const timer = setTimeout(() => {
+        closeBtnRef.current?.focus();
+      }, 50);
+
       return () => {
         document.body.style.overflow = originalOverflow;
+        clearTimeout(timer);
       };
     }
   }, [isOpen]);
@@ -34,12 +56,12 @@ export function AdminDrawer({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
-        onClose();
+        handleClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
 
   if (!isOpen) return null;
 
@@ -48,7 +70,7 @@ export function AdminDrawer({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-300 animate-in fade-in"
-        onClick={onClose}
+        onClick={handleClose}
         aria-hidden="true"
       />
 
@@ -57,8 +79,9 @@ export function AdminDrawer({
         {/* Close Button Header */}
         <div className="absolute top-3 right-3 z-20">
           <button
+            ref={closeBtnRef}
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="p-1.5 rounded-xl bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors cursor-pointer"
             aria-label="Close navigation"
           >

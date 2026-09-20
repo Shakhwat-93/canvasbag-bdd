@@ -79,6 +79,7 @@ export function OriginHeroSlider({ settings = {} }: OriginHeroSliderProps) {
                   fill
                   sizes="(max-width: 1280px) 100vw, 1200px"
                   priority={idx === 0}
+                  loading={idx === 0 ? "eager" : "lazy"}
                   className="object-cover object-center w-full h-full"
                 />
               </Link>

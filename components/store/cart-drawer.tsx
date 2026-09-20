@@ -9,17 +9,89 @@ import { formatBDT, sanitizeImageUrl } from "@/lib/format";
 
 export function CartDrawer() {
   const { isCartOpen, setIsCartOpen, items, updateQuantity, removeItem, subtotal, banglaSubtotal } = useCart();
+  const drawerRef = React.useRef<HTMLDivElement>(null);
+  const closeBtnRef = React.useRef<HTMLButtonElement>(null);
+  const previousActiveElementRef = React.useRef<HTMLElement | null>(null);
 
-  // Close on Escape key
+  // Evacuate focus before setting isCartOpen(false) to prevent aria-hidden on focused element
+  const closeDrawer = React.useCallback(() => {
+    if (drawerRef.current && drawerRef.current.contains(document.activeElement)) {
+      if (
+        previousActiveElementRef.current &&
+        document.body.contains(previousActiveElementRef.current) &&
+        typeof previousActiveElementRef.current.focus === "function"
+      ) {
+        previousActiveElementRef.current.focus();
+      } else {
+        (document.activeElement as HTMLElement)?.blur();
+      }
+    }
+    setIsCartOpen(false);
+  }, [setIsCartOpen]);
+
+  // Focus management on open/close
   useEffect(() => {
+    if (isCartOpen) {
+      if (document.activeElement instanceof HTMLElement) {
+        previousActiveElementRef.current = document.activeElement;
+      }
+      const timer = setTimeout(() => {
+        closeBtnRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      if (drawerRef.current && drawerRef.current.contains(document.activeElement)) {
+        if (
+          previousActiveElementRef.current &&
+          document.body.contains(previousActiveElementRef.current) &&
+          typeof previousActiveElementRef.current.focus === "function"
+        ) {
+          previousActiveElementRef.current.focus();
+        } else {
+          (document.activeElement as HTMLElement)?.blur();
+        }
+      }
+    }
+  }, [isCartOpen]);
+
+  // Keyboard navigation & focus trap
+  useEffect(() => {
+    if (!isCartOpen) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isCartOpen) {
-        setIsCartOpen(false);
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeDrawer();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        if (!drawerRef.current) return;
+        const focusable = drawerRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isCartOpen, setIsCartOpen]);
+  }, [isCartOpen, closeDrawer]);
 
   // Lock body scroll when cart drawer is open
   useEffect(() => {
@@ -35,14 +107,19 @@ export function CartDrawer() {
 
   return (
     <div
+      ref={drawerRef}
       className={`fixed inset-0 z-[110] flex justify-end bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
         isCartOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
+      role="dialog"
+      aria-modal={isCartOpen ? "true" : undefined}
+      aria-label="Shopping Cart Drawer"
       aria-hidden={!isCartOpen}
+      inert={!isCartOpen}
     >
       {/* Backdrop click close */}
       <div
-        onClick={() => setIsCartOpen(false)}
+        onClick={closeDrawer}
         className="absolute inset-0 cursor-pointer"
         aria-label="Close cart drawer"
       />
@@ -60,8 +137,9 @@ export function CartDrawer() {
             <h2 className="font-black text-slate-900 text-lg uppercase tracking-wider">Your Carry</h2>
           </div>
           <button
+            ref={closeBtnRef}
             type="button"
-            onClick={() => setIsCartOpen(false)}
+            onClick={closeDrawer}
             className="p-2.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 cursor-pointer transition-colors"
             aria-label="Close drawer"
           >
@@ -82,7 +160,7 @@ export function CartDrawer() {
               </div>
               <button
                 type="button"
-                onClick={() => setIsCartOpen(false)}
+                onClick={closeDrawer}
                 className="mt-2 px-6 py-2.5 rounded-xl bg-primary-gradient text-[var(--primary-foreground)] text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all cursor-pointer shadow-sm"
               >
                 Explore Products
@@ -111,7 +189,7 @@ export function CartDrawer() {
                     <div className="min-w-0">
                       <Link
                         href={`/product/${item.slug}`}
-                        onClick={() => setIsCartOpen(false)}
+                        onClick={closeDrawer}
                         className="text-xs sm:text-sm font-bold text-slate-850 hover:text-[var(--primary)] line-clamp-1 transition-colors"
                       >
                         {item.name}
@@ -182,14 +260,14 @@ export function CartDrawer() {
             <div className="grid grid-cols-2 gap-3 pt-1">
               <button
                 type="button"
-                onClick={() => setIsCartOpen(false)}
+                onClick={closeDrawer}
                 className="border-2 border-slate-300 hover:bg-slate-100 text-slate-800 rounded-2xl py-3.5 text-xs font-black uppercase tracking-widest cursor-pointer transition-all active:scale-95 text-center"
               >
                 Keep Shopping
               </button>
               <Link
                 href="/checkout"
-                onClick={() => setIsCartOpen(false)}
+                onClick={closeDrawer}
                 className="bg-primary-gradient text-[var(--primary-foreground)] rounded-2xl py-3.5 text-xs font-black uppercase tracking-widest text-center shadow-lg shadow-[var(--primary)]/25 active:scale-95 transition-all flex items-center justify-center hover:opacity-95"
               >
                 Checkout COD

@@ -75,7 +75,6 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
                   width={36}
                   height={36}
                   className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
-                  priority
                   unoptimized
                 />
                 <span className="text-lg font-black tracking-tight text-slate-900 group-hover:text-[#ff6b35] transition-colors">
@@ -110,7 +109,6 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
                 width={38}
                 height={38}
                 className="h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
-                priority
                 unoptimized
               />
               <span className="text-xl font-black tracking-tight text-slate-900 group-hover:text-[#ff6b35] transition-colors">
