@@ -3,6 +3,7 @@ import { getLandingPages, getCatalogProducts } from "@/lib/supabase";
 import { LandingPagesManager } from "@/components/admin/landing-pages-manager";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata = {
   title: "Landing Pages | CanvasBag Admin",
@@ -10,8 +11,8 @@ export const metadata = {
 
 export default async function AdminLandingPagesPage() {
   const [landingPages, products] = await Promise.all([
-    getLandingPages(),
-    getCatalogProducts(),
+    getLandingPages({ forceFresh: true }),
+    getCatalogProducts({ forceFresh: true }),
   ]);
 
   return <LandingPagesManager initialLandingPages={landingPages} initialProducts={products} />;

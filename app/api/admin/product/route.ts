@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
         .replace(/(^-|-$)+/g, "");
     }
 
-    const existingProducts = await getCatalogProducts();
+    const existingProducts = await getCatalogProducts({ forceFresh: true });
     const slugConflict = existingProducts.find(
       (p) => p.slug && p.slug.toLowerCase() === slug.toLowerCase() && p.id !== id
     );
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
 
     // 3. Category resolution
     if (categoryId && (!categorySlug || !categoryName)) {
-      const categories = await getCatalogCategories();
+      const categories = await getCatalogCategories({ forceFresh: true });
       const cat = categories.find((c) => c.id === categoryId);
       if (cat) {
         categorySlug = cat.slug;
@@ -159,29 +159,26 @@ export async function POST(req: NextRequest) {
       created_at: created_at || new Date().toISOString(),
     };
 
-    const success = await supabaseCatalogService.upsertProduct(id, productData);
-    if (!success) {
+    const savedProduct = await supabaseCatalogService.upsertProduct(id, productData);
+    if (!savedProduct) {
       return NextResponse.json({ error: "Failed to save product to catalog" }, { status: 500 });
     }
 
     // Atomic cache invalidation
+    await supabaseCatalogService.revalidateCatalog("products");
     try {
-      revalidateTag("cb-products", { expire: 0 });
-      revalidatePath("/", "layout");
-      revalidatePath("/");
-      revalidatePath("/shop");
       if (productData.categorySlug) {
         revalidatePath(`/category/${productData.categorySlug}`);
-        revalidatePath(`/category/${productData.categorySlug}`, "page");
       }
       revalidatePath(`/product/${productData.slug}`);
-      revalidatePath(`/product/${productData.slug}`, "page");
       revalidatePath("/admin/products");
     } catch (e) {
       // Non-fatal
     }
 
-    return NextResponse.json({ success: true, product: productData });
+    return NextResponse.json({ success: true, product: savedProduct }, {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" },
+    });
   } catch (error: any) {
     console.error("[Product API Error]", error);
     return NextResponse.json({ error: error.message || "Failed to save product" }, { status: 500 });

@@ -9,34 +9,36 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { category_slug = "all", ordered_ids } = body;
+    const { category_slug = "all", ordered_ids, items } = body;
 
-    if (!Array.isArray(ordered_ids)) {
-      return NextResponse.json({ error: "Invalid order data" }, { status: 422 });
+    let targetOrderedIds: string[] = [];
+    if (Array.isArray(ordered_ids)) {
+      targetOrderedIds = ordered_ids;
+    } else if (Array.isArray(items)) {
+      targetOrderedIds = items.map((it: any) => (typeof it === "string" ? it : it?.id)).filter(Boolean);
+    } else {
+      return NextResponse.json({ error: "Invalid order data, array expected" }, { status: 422 });
     }
 
-    const settings = await supabaseCatalogService.getSettings();
+    const settings = await supabaseCatalogService.getSettings({ forceFresh: true });
     const ordersMap = settings.category_product_orders || {};
-    ordersMap[category_slug || "all"] = ordered_ids;
+    ordersMap[category_slug || "all"] = targetOrderedIds;
     settings.category_product_orders = ordersMap;
 
-    const success = await supabaseCatalogService.updateSettings(settings);
-    if (!success) {
+    const savedSettings = await supabaseCatalogService.updateSettings(settings);
+    if (!savedSettings) {
       return NextResponse.json({ error: "Failed to save product ordering" }, { status: 500 });
     }
 
-    try {
-      const { revalidateTag, revalidatePath } = await import("next/cache");
-      revalidateTag("cb-settings", { expire: 0 });
-      revalidateTag("cb-products", { expire: 0 });
-      revalidatePath("/", "layout");
-    } catch (e) {}
+    await supabaseCatalogService.revalidateCatalog("all");
 
     return NextResponse.json({
       success: true,
       message: "Product order saved successfully",
       category_slug,
-      ordered_ids,
+      ordered_ids: targetOrderedIds,
+    }, {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" },
     });
   } catch (error: any) {
     console.error("[Reorder Products API Error]", error);

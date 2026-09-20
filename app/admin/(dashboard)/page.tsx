@@ -6,6 +6,7 @@ import { AdminDashboardOverview } from "@/components/admin/admin-dashboard-overv
 import { Loader2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata = {
   title: "Dashboard Overview | CanvasBag Admin",
@@ -13,8 +14,8 @@ export const metadata = {
 
 export default async function AdminDashboardPage() {
   const [products, categories, orders, reviews, supportMessages] = await Promise.all([
-    getCatalogProducts(),
-    getCatalogCategories(),
+    getCatalogProducts({ forceFresh: true }),
+    getCatalogCategories({ forceFresh: true }),
     Promise.resolve(getAllLocalOrders()),
     Promise.resolve(getAllReviews()),
     Promise.resolve(getAllSupportMessages()),

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Save,
   Loader2,
@@ -39,6 +40,7 @@ interface SettingsManagerProps {
 }
 
 export function SettingsManager({ initialSettings }: SettingsManagerProps) {
+  const router = useRouter();
   const [settings, setSettings] = useState<SiteSettings>({
     ...initialSettings,
     announcementEnabled: initialSettings.announcementEnabled ?? true,
@@ -159,10 +161,14 @@ export function SettingsManager({ initialSettings }: SettingsManagerProps) {
 
       const data = await res.json();
       if (data.success) {
-        toast.success("Settings saved successfully!");
-        if (typeof (window as any).applyTheme === "function" && settings.themeColor) {
-          (window as any).applyTheme(settings.themeColor);
+        if (data.settings) {
+          setSettings(data.settings);
         }
+        toast.success("Settings saved successfully!");
+        if (typeof (window as any).applyTheme === "function" && (data.settings?.themeColor || settings.themeColor)) {
+          (window as any).applyTheme(data.settings?.themeColor || settings.themeColor);
+        }
+        router.refresh();
       } else {
         toast.error(data.error || "Failed to save settings");
       }

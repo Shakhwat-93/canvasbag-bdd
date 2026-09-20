@@ -3,6 +3,17 @@ import { revalidateTag, revalidatePath } from "next/cache";
 import { isUserAdmin } from "@/lib/admin-auth";
 import { supabaseCatalogService } from "@/lib/supabase";
 
+export async function GET(req: NextRequest) {
+  if (!(await isUserAdmin())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const settings = await supabaseCatalogService.getSettings({ forceFresh: true });
+  return NextResponse.json({ success: true, settings }, {
+    headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" },
+  });
+}
+
 export async function POST(req: NextRequest) {
   if (!(await isUserAdmin())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -29,28 +40,19 @@ export async function POST(req: NextRequest) {
       settings.pixelId = match ? match[0] : String(settings.pixelId).trim();
     }
 
-    const current = await supabaseCatalogService.getSettings();
+    const current = await supabaseCatalogService.getSettings({ forceFresh: true });
     const merged = { ...current, ...settings };
 
-    const success = await supabaseCatalogService.updateSettings(merged);
-    if (!success) {
+    const savedSettings = await supabaseCatalogService.updateSettings(merged);
+    if (!savedSettings) {
       return NextResponse.json({ error: "Failed to update settings in Supabase" }, { status: 500 });
     }
 
-    supabaseCatalogService.invalidateAllCaches();
+    await supabaseCatalogService.revalidateCatalog("settings");
 
-    try {
-      revalidateTag("cb-settings", { expire: 0 });
-      revalidatePath("/", "layout");
-      revalidatePath("/");
-      revalidatePath("/shop");
-      revalidatePath("/cart");
-      revalidatePath("/checkout");
-    } catch {
-      // Non-fatal
-    }
-
-    return NextResponse.json({ success: true, settings: merged });
+    return NextResponse.json({ success: true, settings: savedSettings }, {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" },
+    });
   } catch (error: any) {
     console.error("[Settings API Error]", error);
     return NextResponse.json({ error: error.message || "Failed to update settings" }, { status: 500 });

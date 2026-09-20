@@ -16,12 +16,10 @@ export async function DELETE(
     if (!success) {
       return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
     }
-    try {
-      const { revalidateTag, revalidatePath } = await import("next/cache");
-      revalidateTag("cb-products", { expire: 0 });
-      revalidatePath("/", "layout");
-    } catch (e) {}
-    return NextResponse.json({ success: true, message: "Product deleted" });
+    await supabaseCatalogService.revalidateCatalog("products");
+    return NextResponse.json({ success: true, message: "Product deleted" }, {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" },
+    });
   } catch (error: any) {
     console.error("[Delete Product API Error]", error);
     return NextResponse.json({ error: error.message || "Failed to delete product" }, { status: 500 });

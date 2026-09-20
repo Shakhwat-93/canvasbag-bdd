@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const effectiveIsVisible = isVisible !== undefined ? Boolean(isVisible) : is_visible !== undefined ? Boolean(is_visible) : true;
 
     // Fetch existing categories to validate uniqueness and hierarchy cycles
-    const existingCategories = await supabaseCatalogService.getCategories();
+    const existingCategories = await supabaseCatalogService.getCategories({ forceFresh: true });
 
     // Prevent duplicate slugs
     const slugConflict = existingCategories.find((c) => c.slug === cleanSlug && c.id !== id);
@@ -85,20 +85,16 @@ export async function POST(req: NextRequest) {
       seoDescription: seoDescription ? String(seoDescription).trim() : seo_description ? String(seo_description).trim() : "",
     };
 
-    const success = await supabaseCatalogService.upsertCategory(id, categoryData);
-    if (!success) {
+    const savedCategory = await supabaseCatalogService.upsertCategory(id, categoryData);
+    if (!savedCategory) {
       return NextResponse.json({ error: "Failed to save category to Supabase" }, { status: 500 });
     }
 
-    try {
-      revalidateTag("cb-categories", { expire: 0 });
-      const { revalidatePath } = await import("next/cache");
-      revalidatePath("/", "layout");
-    } catch (e) {
-      // Ignored in non-production environments
-    }
+    await supabaseCatalogService.revalidateCatalog("categories");
 
-    return NextResponse.json({ success: true, category: categoryData });
+    return NextResponse.json({ success: true, category: savedCategory }, {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" },
+    });
   } catch (error: any) {
     console.error("[Category API Error]", error);
     return NextResponse.json({ error: error.message || "Failed to save category" }, { status: 500 });

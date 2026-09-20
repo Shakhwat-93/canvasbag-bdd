@@ -168,12 +168,17 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
       const res = await fetch("/api/admin/product/reorder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: payload }),
+        body: JSON.stringify({
+          category_slug: selectedCategoryFilter || "all",
+          ordered_ids: displayedProducts.map((p) => p.id),
+          items: payload,
+        }),
       });
 
       const data = await res.json();
       if (data.success) {
         toast.success("Product order saved successfully!");
+        router.refresh();
       } else {
         toast.error(data.error || "Failed to save order");
       }
@@ -204,6 +209,7 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
         });
         setDeleteCandidate(null);
         toast.success("Product deleted successfully");
+        router.refresh();
       } else {
         toast.error(data.error || "Failed to delete product");
       }
@@ -238,6 +244,7 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
       if (data.success) {
         setProducts((prev) => [data.product || (duplicatedProduct as Product), ...prev]);
         toast.success(`Duplicated "${p.name}" as draft`);
+        router.refresh();
       } else {
         toast.error(data.error || "Failed to duplicate product");
       }

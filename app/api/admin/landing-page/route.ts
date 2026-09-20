@@ -33,12 +33,16 @@ export async function POST(req: NextRequest) {
       components: Array.isArray(components) ? components : [],
     };
 
-    const success = await supabaseCatalogService.upsertLandingPage(id, data);
-    if (!success) {
+    const savedLp = await supabaseCatalogService.upsertLandingPage(id, data);
+    if (!savedLp) {
       return NextResponse.json({ error: "Failed to save landing page to Supabase" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, landingPage: data });
+    await supabaseCatalogService.revalidateCatalog("landing-pages");
+
+    return NextResponse.json({ success: true, landingPage: savedLp }, {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" },
+    });
   } catch (error: any) {
     console.error("[Landing Page API Error]", error);
     return NextResponse.json({ error: error.message || "Failed to save landing page" }, { status: 500 });

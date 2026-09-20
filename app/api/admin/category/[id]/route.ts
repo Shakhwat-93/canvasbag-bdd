@@ -30,8 +30,8 @@ export async function DELETE(
     }
 
     const [categories, products] = await Promise.all([
-      supabaseCatalogService.getCategories(),
-      supabaseCatalogService.getCatalogProducts(),
+      supabaseCatalogService.getCategories({ forceFresh: true }),
+      supabaseCatalogService.getCatalogProducts({ forceFresh: true }),
     ]);
 
     const targetCategory = categories.find((c) => c.id === id || c.slug === id);
@@ -82,18 +82,14 @@ export async function DELETE(
       return NextResponse.json({ error: "Failed to delete category" }, { status: 500 });
     }
 
-    try {
-      revalidateTag("cb-categories", { expire: 0 });
-      revalidateTag("cb-products", { expire: 0 });
-      revalidatePath("/", "layout");
-    } catch (e) {
-      // Non-fatal
-    }
+    await supabaseCatalogService.revalidateCatalog("all");
 
     return NextResponse.json({
       success: true,
       message: "Category deleted safely with dependencies resolved",
       reassignedChildrenCount: childCategories.length,
+    }, {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" },
     });
   } catch (error: any) {
     console.error("[Delete Category API Error]", error);

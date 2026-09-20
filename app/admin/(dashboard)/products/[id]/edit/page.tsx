@@ -6,6 +6,7 @@ import { getProductAllReviews } from "@/lib/db";
 import { ProductForm } from "@/components/admin/product-form";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 interface EditProductPageProps {
   params: Promise<{ id: string }>;
@@ -13,7 +14,7 @@ interface EditProductPageProps {
 
 export async function generateMetadata({ params }: EditProductPageProps) {
   const { id } = await params;
-  const products = await getCatalogProducts();
+  const products = await getCatalogProducts({ forceFresh: true });
   const product = products.find((p) => p.id === id || p.slug === id);
 
   return {
@@ -24,8 +25,8 @@ export async function generateMetadata({ params }: EditProductPageProps) {
 export default async function EditProductPage({ params }: EditProductPageProps) {
   const { id } = await params;
   const [categories, products] = await Promise.all([
-    getCatalogCategories(),
-    getCatalogProducts(),
+    getCatalogCategories({ forceFresh: true }),
+    getCatalogProducts({ forceFresh: true }),
   ]);
 
   const product = products.find((p) => p.id === id || p.slug === id);

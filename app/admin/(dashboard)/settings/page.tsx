@@ -3,13 +3,14 @@ import { getCatalogSettings } from "@/lib/supabase";
 import { SettingsManager } from "@/components/admin/settings-manager";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata = {
   title: "Site Settings | CanvasBag Admin",
 };
 
 export default async function AdminSettingsPage() {
-  const settings = await getCatalogSettings();
+  const settings = await getCatalogSettings({ forceFresh: true });
 
   return <SettingsManager initialSettings={settings} />;
 }

@@ -16,7 +16,10 @@ export async function DELETE(
     if (!success) {
       return NextResponse.json({ error: "Failed to delete landing page" }, { status: 500 });
     }
-    return NextResponse.json({ success: true, message: "Landing page deleted" });
+    await supabaseCatalogService.revalidateCatalog("landing-pages");
+    return NextResponse.json({ success: true, message: "Landing page deleted" }, {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" },
+    });
   } catch (error: any) {
     console.error("[Delete Landing Page API Error]", error);
     return NextResponse.json({ error: error.message || "Failed to delete landing page" }, { status: 500 });

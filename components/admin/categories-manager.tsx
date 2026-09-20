@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   FolderTree,
   Plus,
@@ -311,6 +312,7 @@ function CategoryNodeRow({
 }
 
 export function CategoriesManager({ initialCategories, initialProducts }: CategoriesManagerProps) {
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [products, setProducts] = useState<Product[]>(initialProducts);
 
@@ -456,6 +458,7 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
           prev.map((c) => (c.id === cat.id ? { ...c, isVisible: newVis, is_visible: newVis } : c))
         );
         toast.success(newVis ? `"${cat.name}" is now visible in menu` : `"${cat.name}" is now hidden from menu`);
+        router.refresh();
       } else {
         toast.error(data.error || "Failed to update category");
       }
@@ -501,6 +504,7 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
           })
         );
         toast.success("Category order updated");
+        router.refresh();
       } else {
         toast.error(data.error || "Failed to reorder categories");
       }
@@ -557,6 +561,7 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
 
         toast.success("Category deleted safely");
         setCategoryToDelete(null);
+        router.refresh();
       } else {
         toast.error(data.error || "Failed to delete category");
       }
@@ -593,6 +598,7 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
         });
         toast.success("Category saved successfully");
         setIsCategoryModalOpen(false);
+        router.refresh();
       } else {
         toast.error(data.error || "Failed to save category");
       }

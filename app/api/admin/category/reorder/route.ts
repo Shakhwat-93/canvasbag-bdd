@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid reorder payload, array of items expected" }, { status: 422 });
     }
 
-    const categories = await supabaseCatalogService.getCategories();
+    const categories = await supabaseCatalogService.getCategories({ forceFresh: true });
     const categoryMap = new Map(categories.map((c) => [c.id, c]));
 
     const updatePromises = items.map(async (item: { id: string; sortOrder: number; parentId?: string | null }) => {
@@ -40,15 +40,11 @@ export async function POST(req: NextRequest) {
 
     await Promise.all(updatePromises);
 
-    try {
-      revalidateTag("cb-categories", { expire: 0 });
-      const { revalidatePath } = await import("next/cache");
-      revalidatePath("/", "layout");
-    } catch (e) {
-      // Non-fatal
-    }
+    await supabaseCatalogService.revalidateCatalog("categories");
 
-    return NextResponse.json({ success: true, message: "Category order updated successfully" });
+    return NextResponse.json({ success: true, message: "Category order updated successfully" }, {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" },
+    });
   } catch (error: any) {
     console.error("[Category Reorder Error]", error);
     return NextResponse.json({ error: error.message || "Failed to reorder categories" }, { status: 500 });

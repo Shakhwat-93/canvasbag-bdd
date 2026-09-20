@@ -4,6 +4,7 @@ import { ProductsManager } from "@/components/admin/products-manager";
 import { Loader2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata = {
   title: "Products Manager | CanvasBag Admin",
@@ -11,8 +12,8 @@ export const metadata = {
 
 export default async function AdminProductsPage() {
   const [categories, products] = await Promise.all([
-    getCatalogCategories(),
-    getCatalogProducts(),
+    getCatalogCategories({ forceFresh: true }),
+    getCatalogProducts({ forceFresh: true }),
   ]);
 
   return (
