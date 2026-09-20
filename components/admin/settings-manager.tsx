@@ -101,7 +101,7 @@ export function SettingsManager({ initialSettings }: SettingsManagerProps) {
       imgKey: "heroSliderImage1" as const,
       linkKey: "heroSliderLink1" as const,
       label: "Slide 1 (Primary Banner)",
-      defaultImg: "/brand/hero-fitness-offer.webp",
+      defaultImg: "",
       defaultLink: "/#best-sellers",
     },
     {
@@ -109,7 +109,7 @@ export function SettingsManager({ initialSettings }: SettingsManagerProps) {
       imgKey: "heroSliderImage2" as const,
       linkKey: "heroSliderLink2" as const,
       label: "Slide 2",
-      defaultImg: "/brand/hero-collection.webp",
+      defaultImg: "",
       defaultLink: "/shop",
     },
     {
@@ -117,7 +117,7 @@ export function SettingsManager({ initialSettings }: SettingsManagerProps) {
       imgKey: "heroSliderImage3" as const,
       linkKey: "heroSliderLink3" as const,
       label: "Slide 3",
-      defaultImg: "/brand/smart-travel-bag/black-color.webp",
+      defaultImg: "",
       defaultLink: "/category/everyday-totes",
     },
     {
@@ -140,7 +140,7 @@ export function SettingsManager({ initialSettings }: SettingsManagerProps) {
 
   const activePreviewSlides = heroSlides
     .map((s) => ({
-      image: (settings[s.imgKey] as string) || s.defaultImg,
+      image: (settings[s.imgKey] as string) || "",
       link: (settings[s.linkKey] as string) || s.defaultLink,
       title: s.label,
     }))
@@ -538,7 +538,7 @@ export function SettingsManager({ initialSettings }: SettingsManagerProps) {
 
           <div className="grid grid-cols-1 gap-5">
             {heroSlides.map((slide) => {
-              const currentImg = (settings[slide.imgKey] as string) || (slide.num <= 3 ? slide.defaultImg : "");
+              const currentImg = (settings[slide.imgKey] as string) || "";
               const currentLink = (settings[slide.linkKey] as string) || slide.defaultLink;
               const hasCustomImg = Boolean(settings[slide.imgKey]);
               const isUploading = uploadingKey === slide.imgKey;

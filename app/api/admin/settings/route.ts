@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag, revalidatePath } from "next/cache";
 import { isUserAdmin } from "@/lib/admin-auth";
 import { supabaseCatalogService } from "@/lib/supabase";
 
@@ -39,7 +40,6 @@ export async function POST(req: NextRequest) {
     supabaseCatalogService.invalidateAllCaches();
 
     try {
-      const { revalidateTag, revalidatePath } = await import("next/cache");
       revalidateTag("cb-settings", { expire: 0 });
       revalidatePath("/", "layout");
       revalidatePath("/");

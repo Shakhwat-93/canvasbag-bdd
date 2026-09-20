@@ -39,34 +39,25 @@ function ordersHeaders() {
 
 const CATALOG_CACHE_TTL = 5 * 60 * 1000; // 5 minutes fresh cache
 
-const isBuildPhase =
-  typeof process !== "undefined" &&
-  (process.env.NEXT_PHASE === "phase-production-build" ||
-    process.env.npm_lifecycle_event === "build");
-
 let memorySettingsCache: { data: SiteSettings; expiresAt: number } = {
   data: defaultSettings,
   expiresAt: 0,
 };
-let isRefreshingSettings = false;
 
 let memoryCategoriesCache: { data: Category[]; expiresAt: number } = {
   data: fallbackCategories,
   expiresAt: 0,
 };
-let isRefreshingCategories = false;
 
 let memoryProductCache: { data: Product[]; expiresAt: number } = {
   data: fallbackProducts,
   expiresAt: 0,
 };
-let isRefreshingProducts = false;
 
 let memoryLandingPagesCache: { data: LandingPage[]; expiresAt: number } = {
   data: [],
   expiresAt: 0,
 };
-let isRefreshingLandingPages = false;
 
 export function invalidateCatalogSettingsCache(): void {
   memorySettingsCache.expiresAt = 0;
@@ -81,10 +72,10 @@ export function invalidateCatalogLandingPagesCache(): void {
   memoryLandingPagesCache.expiresAt = 0;
 }
 export function invalidateAllCatalogCaches(): void {
-  memorySettingsCache.expiresAt = 0;
-  memoryCategoriesCache.expiresAt = 0;
-  memoryProductCache.expiresAt = 0;
-  memoryLandingPagesCache.expiresAt = 0;
+  invalidateCatalogSettingsCache();
+  invalidateCatalogCategoryCache();
+  invalidateCatalogProductCache();
+  invalidateCatalogLandingPagesCache();
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -92,32 +83,30 @@ export function invalidateAllCatalogCaches(): void {
    ────────────────────────────────────────────────────────── */
 
 export async function getCatalogSettings(): Promise<SiteSettings> {
-  if (isBuildPhase) return memorySettingsCache.data;
-
   const now = Date.now();
-  if (now >= memorySettingsCache.expiresAt && !isRefreshingSettings) {
-    isRefreshingSettings = true;
-    fetch(`${CATALOG_URL}/rest/v1/cb_settings?id=eq.main_settings&select=*`, {
+  if (memorySettingsCache.expiresAt > now) {
+    return memorySettingsCache.data;
+  }
+
+  try {
+    const res = await fetch(`${CATALOG_URL}/rest/v1/cb_settings?id=eq.main_settings&select=*`, {
       headers: catalogHeaders(),
-      signal: AbortSignal.timeout(2000),
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((rows) => {
-        if (rows?.[0]?.data && Object.keys(rows[0].data).length > 0) {
-          memorySettingsCache = {
-            data: { ...defaultSettings, ...rows[0].data } as SiteSettings,
-            expiresAt: Date.now() + CATALOG_CACHE_TTL,
-          };
-        } else {
-          memorySettingsCache.expiresAt = Date.now() + 60_000;
-        }
-      })
-      .catch(() => {
-        memorySettingsCache.expiresAt = Date.now() + 60_000;
-      })
-      .finally(() => {
-        isRefreshingSettings = false;
-      });
+      signal: AbortSignal.timeout(3500),
+      next: { revalidate: 60, tags: ["cb-settings"] },
+    });
+    if (res.ok) {
+      const rows = await res.json();
+      if (rows?.[0]?.data && Object.keys(rows[0].data).length > 0) {
+        const merged: SiteSettings = { ...defaultSettings, ...rows[0].data };
+        memorySettingsCache = {
+          data: merged,
+          expiresAt: now + CATALOG_CACHE_TTL,
+        };
+        return merged;
+      }
+    }
+  } catch (e) {
+    console.warn("[Supabase] getCatalogSettings failed, using fallback:", e);
   }
 
   return memorySettingsCache.data;
@@ -152,38 +141,35 @@ export async function updateCatalogSettings(settings: SiteSettings): Promise<boo
    ────────────────────────────────────────────────────────── */
 
 export async function getCatalogProducts(): Promise<Product[]> {
-  if (isBuildPhase) return memoryProductCache.data;
-
   const now = Date.now();
-  if (now >= memoryProductCache.expiresAt && !isRefreshingProducts) {
-    isRefreshingProducts = true;
-    fetch(`${CATALOG_URL}/rest/v1/cb_products?select=*`, {
-      headers: catalogHeaders(),
-      signal: AbortSignal.timeout(2500),
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((rows) => {
-        if (Array.isArray(rows)) {
-          const products = rows.map((r: any) => r.data).filter(Boolean);
-          if (products.length > 0) {
-            memoryProductCache = {
-              data: products as Product[],
-              expiresAt: Date.now() + CATALOG_CACHE_TTL,
-            };
-            return;
-          }
-        }
-        memoryProductCache.expiresAt = Date.now() + 60_000;
-      })
-      .catch(() => {
-        memoryProductCache.expiresAt = Date.now() + 60_000;
-      })
-      .finally(() => {
-        isRefreshingProducts = false;
-      });
+  if (memoryProductCache.data && memoryProductCache.data.length > 0 && now < memoryProductCache.expiresAt) {
+    return memoryProductCache.data;
   }
 
-  return memoryProductCache.data;
+  try {
+    const res = await fetch(`${CATALOG_URL}/rest/v1/cb_products?select=*`, {
+      headers: catalogHeaders(),
+      signal: AbortSignal.timeout(3500),
+      next: { revalidate: 60, tags: ["cb-products"] },
+    });
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows)) {
+        const products = rows.map((r: any) => r.data).filter(Boolean);
+        if (products.length > 0) {
+          memoryProductCache = {
+            data: products as Product[],
+            expiresAt: now + CATALOG_CACHE_TTL,
+          };
+          return products as Product[];
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[Supabase] getCatalogProducts failed, using fallback:", e);
+  }
+
+  return memoryProductCache.data || fallbackProducts;
 }
 
 export async function upsertCatalogProduct(id: string, productData: Partial<Product>): Promise<boolean> {
@@ -236,38 +222,35 @@ export async function deleteCatalogProduct(id: string): Promise<boolean> {
    ────────────────────────────────────────────────────────── */
 
 export async function getCatalogCategories(): Promise<Category[]> {
-  if (isBuildPhase) return memoryCategoriesCache.data;
-
   const now = Date.now();
-  if (now >= memoryCategoriesCache.expiresAt && !isRefreshingCategories) {
-    isRefreshingCategories = true;
-    fetch(`${CATALOG_URL}/rest/v1/cb_categories?select=*`, {
-      headers: catalogHeaders(),
-      signal: AbortSignal.timeout(2000),
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((rows) => {
-        if (Array.isArray(rows)) {
-          const categories = rows.map((r: any) => r.data).filter(Boolean);
-          if (categories.length > 0) {
-            memoryCategoriesCache = {
-              data: categories as Category[],
-              expiresAt: Date.now() + CATALOG_CACHE_TTL,
-            };
-            return;
-          }
-        }
-        memoryCategoriesCache.expiresAt = Date.now() + 60_000;
-      })
-      .catch(() => {
-        memoryCategoriesCache.expiresAt = Date.now() + 60_000;
-      })
-      .finally(() => {
-        isRefreshingCategories = false;
-      });
+  if (memoryCategoriesCache.data && memoryCategoriesCache.data.length > 0 && now < memoryCategoriesCache.expiresAt) {
+    return memoryCategoriesCache.data;
   }
 
-  return memoryCategoriesCache.data;
+  try {
+    const res = await fetch(`${CATALOG_URL}/rest/v1/cb_categories?select=*`, {
+      headers: catalogHeaders(),
+      signal: AbortSignal.timeout(3500),
+      next: { revalidate: 60, tags: ["cb-categories"] },
+    });
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows)) {
+        const categories = rows.map((r: any) => r.data).filter(Boolean);
+        if (categories.length > 0) {
+          memoryCategoriesCache = {
+            data: categories as Category[],
+            expiresAt: now + CATALOG_CACHE_TTL,
+          };
+          return categories as Category[];
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[Supabase] getCatalogCategories failed, using fallback:", e);
+  }
+
+  return memoryCategoriesCache.data || fallbackCategories;
 }
 
 export async function upsertCatalogCategory(id: string, categoryData: Partial<Category>): Promise<boolean> {
@@ -320,40 +303,37 @@ export async function deleteCatalogCategory(id: string): Promise<boolean> {
    ────────────────────────────────────────────────────────── */
 
 export async function getLandingPages(): Promise<LandingPage[]> {
-  if (isBuildPhase) return memoryLandingPagesCache.data;
-
   const now = Date.now();
-  if (now >= memoryLandingPagesCache.expiresAt && !isRefreshingLandingPages) {
-    isRefreshingLandingPages = true;
-    fetch(`${CATALOG_URL}/rest/v1/cb_landing_pages?select=*`, {
-      headers: catalogHeaders(),
-      signal: AbortSignal.timeout(2000),
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((rows) => {
-        if (Array.isArray(rows)) {
-          const lps = rows.map((r: any) => {
-            const data = r.data || {};
-            if (!data.id && r.id) data.id = r.id;
-            return data as LandingPage;
-          });
-          memoryLandingPagesCache = {
-            data: lps,
-            expiresAt: Date.now() + CATALOG_CACHE_TTL,
-          };
-          return;
-        }
-        memoryLandingPagesCache.expiresAt = Date.now() + 60_000;
-      })
-      .catch(() => {
-        memoryLandingPagesCache.expiresAt = Date.now() + 60_000;
-      })
-      .finally(() => {
-        isRefreshingLandingPages = false;
-      });
+  if (memoryLandingPagesCache.data && memoryLandingPagesCache.data.length > 0 && now < memoryLandingPagesCache.expiresAt) {
+    return memoryLandingPagesCache.data;
   }
 
-  return memoryLandingPagesCache.data;
+  try {
+    const res = await fetch(`${CATALOG_URL}/rest/v1/cb_landing_pages?select=*`, {
+      headers: catalogHeaders(),
+      signal: AbortSignal.timeout(3500),
+      next: { revalidate: 60, tags: ["cb-landing-pages"] },
+    });
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows)) {
+        const lps = rows.map((r: any) => {
+          const data = r.data || {};
+          if (!data.id && r.id) data.id = r.id;
+          return data as LandingPage;
+        });
+        memoryLandingPagesCache = {
+          data: lps,
+          expiresAt: now + CATALOG_CACHE_TTL,
+        };
+        return lps;
+      }
+    }
+  } catch (e) {
+    console.warn("[Supabase] getLandingPages failed, using fallback:", e);
+  }
+
+  return memoryLandingPagesCache.data || [];
 }
 
 export async function getLandingPage(slug: string): Promise<LandingPage | null> {

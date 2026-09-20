@@ -39,25 +39,7 @@ export function OriginHeroSlider({ settings = {} }: OriginHeroSliderProps) {
     },
   ].filter((s): s is { image: string; link: string; alt: string } => Boolean(s.image && typeof s.image === "string" && s.image.trim() !== ""));
 
-  const defaultFallbackSlides = [
-    {
-      image: "/brand/hero-fitness-offer.webp",
-      link: "/#best-sellers",
-      alt: "CanvasBag Bangladesh Hero Offer",
-    },
-    {
-      image: "/brand/hero-collection.webp",
-      link: "/shop",
-      alt: "CanvasBag Bangladesh Special Collection",
-    },
-    {
-      image: "/brand/hero-training.webp",
-      link: "/category/everyday-totes",
-      alt: "CanvasBag Bangladesh Travel Gear",
-    },
-  ];
-
-  const slides = configuredList.length > 0 ? configuredList : defaultFallbackSlides;
+  const slides = configuredList;
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
