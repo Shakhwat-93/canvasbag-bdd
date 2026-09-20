@@ -7,7 +7,7 @@ import { MobileFloatingCart } from "@/components/store/mobile-floating-cart";
 import { MobileBottomNav } from "@/components/store/mobile-bottom-nav";
 import { FloatingContact } from "@/components/store/floating-contact";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function StoreLayout({ children }: { children: React.ReactNode }) {
   const [settings, categories] = await Promise.all([

@@ -16,7 +16,7 @@ export interface ProductSalesStat {
 
 // In-memory cache for fast SSR responses
 let cachedRanking: { stats: Map<string, ProductSalesStat>; timestamp: number } | null = null;
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes cache
 
 /**
  * Normalizes text for reliable matching between catalog products and order line items
@@ -50,17 +50,18 @@ export async function getRealProductSalesStats(
     });
   }
 
-  // 1. Fetch remote orders from primary orders Supabase
+  // 1. Fetch remote orders from primary orders Supabase (limit to 200 recent orders with 1.5s timeout)
   let remoteOrders: any[] = [];
   try {
     const res = await fetch(
-      `${ORDERS_URL}/rest/v1/orders?select=id,product_name,ordered_items,quantity,status,created_at&order=created_at.desc&limit=3000`,
+      `${ORDERS_URL}/rest/v1/orders?select=id,product_name,ordered_items,quantity,status,created_at&order=created_at.desc&limit=200`,
       {
         headers: {
           apikey: ORDERS_KEY,
           Authorization: `Bearer ${ORDERS_KEY}`,
           "Content-Type": "application/json",
         },
+        signal: AbortSignal.timeout(1500),
         next: { revalidate: 600, tags: ["orders-sales-stats"] },
       }
     );
@@ -68,7 +69,7 @@ export async function getRealProductSalesStats(
       remoteOrders = await res.json();
     }
   } catch (err) {
-    console.error("[Sales Ranking] Failed to fetch remote orders:", err);
+    // Non-fatal: fallback to local orders or flag
   }
 
   // 2. Fetch local orders from SQLite

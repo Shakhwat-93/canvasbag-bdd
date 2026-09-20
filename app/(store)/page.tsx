@@ -1,7 +1,5 @@
 import React from "react";
 import Link from "next/link";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { Flame, ArrowRight } from "lucide-react";
 import { supabaseCatalogService } from "@/lib/supabase";
 import { getSortedProducts, getTopSellingProducts } from "@/lib/catalog";
@@ -15,21 +13,9 @@ import { ReviewsSection } from "@/components/store/reviews-section";
 import { WhyChooseUs } from "@/components/store/why-choose-us";
 import type { ProductReview } from "@/lib/types";
 
-export const revalidate = 60; // Revalidate every 60s
+export const revalidate = 60; // Revalidate every 60s at Edge
 
 export default async function HomePage() {
-  const headerList = await headers();
-  const host = headerList.get("host")?.split(":")[0];
-
-  // Custom domain check for landing pages
-  if (host && host !== "localhost" && host !== "127.0.0.1") {
-    const landingPages = await supabaseCatalogService.getLandingPages();
-    const matchedLp = landingPages.find((lp) => lp.custom_domain === host);
-    if (matchedLp) {
-      redirect(`/lp/${matchedLp.slug || matchedLp.id}`);
-    }
-  }
-
   const [settings, categories, bestSellers] = await Promise.all([
     supabaseCatalogService.getSettings(),
     supabaseCatalogService.getCategories(),

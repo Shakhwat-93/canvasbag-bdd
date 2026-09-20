@@ -36,6 +36,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to update settings in Supabase" }, { status: 500 });
     }
 
+    supabaseCatalogService.invalidateAllCaches();
+
     try {
       const { revalidateTag, revalidatePath } = await import("next/cache");
       revalidateTag("cb-settings", { expire: 0 });

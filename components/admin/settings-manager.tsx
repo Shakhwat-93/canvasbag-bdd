@@ -101,7 +101,7 @@ export function SettingsManager({ initialSettings }: SettingsManagerProps) {
       imgKey: "heroSliderImage1" as const,
       linkKey: "heroSliderLink1" as const,
       label: "Slide 1 (Primary Banner)",
-      defaultImg: "/brand/hero-slider-1.webp",
+      defaultImg: "/brand/hero-fitness-offer.webp",
       defaultLink: "/#best-sellers",
     },
     {
@@ -109,7 +109,7 @@ export function SettingsManager({ initialSettings }: SettingsManagerProps) {
       imgKey: "heroSliderImage2" as const,
       linkKey: "heroSliderLink2" as const,
       label: "Slide 2",
-      defaultImg: "/brand/hero-banner.webp",
+      defaultImg: "/brand/hero-collection.webp",
       defaultLink: "/shop",
     },
     {

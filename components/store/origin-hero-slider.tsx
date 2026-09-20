@@ -41,17 +41,17 @@ export function OriginHeroSlider({ settings = {} }: OriginHeroSliderProps) {
 
   const defaultFallbackSlides = [
     {
-      image: "/brand/hero-slider-1.webp",
+      image: "/brand/hero-fitness-offer.webp",
       link: "/#best-sellers",
       alt: "CanvasBag Bangladesh Hero Offer",
     },
     {
-      image: "/brand/hero-banner.webp",
+      image: "/brand/hero-collection.webp",
       link: "/shop",
       alt: "CanvasBag Bangladesh Special Collection",
     },
     {
-      image: "/brand/smart-travel-bag/black-color.webp",
+      image: "/brand/hero-training.webp",
       link: "/category/everyday-totes",
       alt: "CanvasBag Bangladesh Travel Gear",
     },
