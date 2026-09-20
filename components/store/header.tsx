@@ -399,18 +399,14 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
                 </div>
               </div>
 
-              {/* Mobile Contact Box */}
-              <div className="bg-[#fff3ef] rounded-2xl p-4 border border-[#ff6b35]/15 space-y-2">
-                <p className="text-xs font-bold text-[#ff6b35]">সরাসরি কল করুন</p>
-                <a
-                  href={`tel:${rawPhone}`}
-                  className="flex items-center gap-2 text-sm font-black text-slate-900"
-                >
-                  <Phone className="w-4 h-4 text-[#ff6b35]" />
-                  <span>{displayPhone}</span>
-                </a>
-                <p className="text-[10px] text-slate-500 font-medium">সকাল ১০টা — রাত ৯টা (সাত দিন)</p>
-              </div>
+              {/* Mobile Call Button */}
+              <a
+                href={`tel:${rawPhone}`}
+                className="flex items-center justify-center gap-2.5 w-full py-3.5 px-4 rounded-2xl bg-[#ff6b35] hover:bg-[#e55520] text-white font-black text-sm tracking-wide shadow-md shadow-[#ff6b35]/25 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <Phone className="w-4 h-4 fill-white" />
+                <span>{displayPhone}</span>
+              </a>
             </div>
           </div>
         </div>
