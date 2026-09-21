@@ -13,13 +13,18 @@ export const metadata = {
 };
 
 export default async function AdminDashboardPage() {
-  const [products, categories, orders, reviews, supportMessages] = await Promise.all([
-    getCatalogProducts({ forceFresh: true }),
-    getCatalogCategories({ forceFresh: true }),
-    Promise.resolve(getAllLocalOrders()),
-    Promise.resolve(getAllReviews()),
-    Promise.resolve(getAllSupportMessages()),
-  ]);
+  const [products, categories, localOrders, reviews, supportMessages] =
+    await Promise.all([
+      getCatalogProducts({ forceFresh: true }),
+      getCatalogCategories({ forceFresh: true }),
+      Promise.resolve(getAllLocalOrders()),
+      Promise.resolve(getAllReviews()),
+      Promise.resolve(getAllSupportMessages()),
+    ]);
+
+  const combinedOrders = (localOrders || []).sort(
+    (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+  );
 
   let mediaCount = 0;
   if (isR2Configured()) {
@@ -35,8 +40,8 @@ export default async function AdminDashboardPage() {
     <Suspense
       fallback={
         <div className="py-24 text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-slate-400 mx-auto mb-2" />
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+          <Loader2 className="w-8 h-8 animate-spin text-[#D45266] mx-auto mb-2" />
+          <p className="text-xs text-stone-400 font-bold uppercase tracking-wider">
             Loading dashboard metrics...
           </p>
         </div>
@@ -45,7 +50,7 @@ export default async function AdminDashboardPage() {
       <AdminDashboardOverview
         products={products}
         categories={categories}
-        orders={orders}
+        orders={combinedOrders}
         reviews={reviews}
         supportMessages={supportMessages}
         mediaCount={mediaCount}

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Plus, Trash2, Edit2, ExternalLink, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminAlert } from "@/components/admin/admin-alert-provider";
 import type { LandingPage, Product } from "@/lib/types";
 
 interface LandingPagesManagerProps {
@@ -56,8 +57,15 @@ export function LandingPagesManager({
     }
   };
 
-  const handleDeleteLandingPage = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this landing page?")) return;
+  const { confirmDelete, alert: showAlert } = useAdminAlert();
+
+  const handleDeleteLandingPage = async (id: string, title?: string) => {
+    const ok = await confirmDelete(
+      title || id,
+      `Are you sure you want to delete collection/drop "${title || id}"? This page will no longer be accessible.`
+    );
+    if (!ok) return;
+
     try {
       const res = await fetch(`/api/admin/landing-page?id=${id}`, {
         method: "DELETE",
@@ -67,10 +75,18 @@ export function LandingPagesManager({
         setLandingPages((prev) => prev.filter((lp) => lp.id !== id && lp.slug !== id));
         toast.success("Landing page deleted");
       } else {
-        toast.error(data.error || "Failed to delete landing page");
+        await showAlert({
+          title: "Delete Failed",
+          description: data.error || "Failed to delete landing page",
+          variant: "error",
+        });
       }
     } catch {
-      toast.error("Failed to delete landing page");
+      await showAlert({
+        title: "Delete Failed",
+        description: "An unexpected error occurred while deleting landing page.",
+        variant: "error",
+      });
     }
   };
 
@@ -150,7 +166,7 @@ export function LandingPagesManager({
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDeleteLandingPage(lp.id || lp.slug || "")}
+                        onClick={() => handleDeleteLandingPage(lp.id || lp.slug || "", lp.title)}
                         className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg cursor-pointer"
                         title="Delete landing page"
                       >

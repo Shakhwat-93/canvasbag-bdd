@@ -24,6 +24,7 @@ import {
   Filter,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminAlert } from "@/components/admin/admin-alert-provider";
 import type { Category, Product } from "@/lib/types";
 import { formatBDT } from "@/lib/format";
 
@@ -53,9 +54,7 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Delete modal state
-  const [deleteCandidate, setDeleteCandidate] = useState<Product | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { confirmDelete, alert } = useAdminAlert();
 
   // Duplicate state
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
@@ -192,34 +191,42 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
     }
   };
 
-  // Delete product
-  const confirmDeleteProduct = async () => {
-    if (!deleteCandidate) return;
-    setIsDeleting(true);
+  // Delete product with unified sweet alert
+  const handleDeleteProduct = async (p: Product) => {
+    const confirmed = await confirmDelete(
+      p.name,
+      `Are you sure you want to permanently delete "${p.name}" (${formatBDT(p.price)})? This action cannot be undone.`
+    );
+    if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/admin/product/${deleteCandidate.id}`, {
+      const res = await fetch(`/api/admin/product/${p.id}`, {
         method: "DELETE",
       });
 
       const data = await res.json();
       if (data.success) {
-        setProducts((prev) => prev.filter((p) => p.id !== deleteCandidate.id));
+        setProducts((prev) => prev.filter((item) => item.id !== p.id));
         setSelectedIds((prev) => {
           const next = new Set(prev);
-          next.delete(deleteCandidate.id);
+          next.delete(p.id);
           return next;
         });
-        setDeleteCandidate(null);
         toast.success("Product deleted successfully");
         router.refresh();
       } else {
-        toast.error(data.error || "Failed to delete product");
+        await alert({
+          title: "Delete Failed",
+          description: data.error || "Failed to delete product.",
+          variant: "error",
+        });
       }
     } catch {
-      toast.error("Failed to delete product");
-    } finally {
-      setIsDeleting(false);
+      await alert({
+        title: "Network Error",
+        description: "An unexpected error occurred while deleting the product.",
+        variant: "error",
+      });
     }
   };
 
@@ -361,48 +368,48 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
   };
 
   return (
-    <div className="space-y-6">
+    <div className="bg-white rounded-3xl border border-[#EFECE6] p-5 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.02)] space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-150 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EFECE6] pb-5">
         <div>
-          <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <h2 className="text-xl font-black text-stone-900 tracking-tight flex items-center gap-2.5">
             <span>Products Manager</span>
-            <span className="text-xs bg-slate-100 text-slate-600 font-bold px-2.5 py-0.5 rounded-full">
+            <span className="text-xs bg-[#FAF8F5] text-stone-600 font-bold px-2.5 py-0.5 rounded-full border border-[#EFECE6]">
               {products.length} Total
             </span>
           </h2>
-          <p className="text-xs text-slate-400 font-medium mt-0.5">
+          <p className="text-xs text-stone-400 font-medium mt-0.5">
             Manage product catalog, prices, stock, search, and manual reorder sorting
           </p>
         </div>
 
         <Link
           href="/admin/products/new"
-          className="bg-primary-gradient text-[var(--primary-foreground)] hover:opacity-90 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-2 cursor-pointer active:scale-95 transition-all self-start sm:self-auto"
+          className="bg-[#D45266] hover:bg-[#BF4357] text-white px-4 py-2 rounded-full text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all self-start sm:self-auto"
         >
-          <Plus className="w-4 h-4" />
-          <span>Add Product</span>
+          <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+          <span>+ Add Product</span>
         </Link>
       </div>
 
       {/* Filter / Search & Sort Controls */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-[#FAF8F5] p-3.5 rounded-2xl border border-[#EFECE6]">
         <div className="flex flex-wrap items-center gap-2.5 flex-1">
           {/* Search */}
           <div className="relative min-w-[200px] max-w-xs flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search products..."
-              className="w-full h-9 pl-9 pr-8 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:border-slate-900"
+              className="w-full h-9 pl-9 pr-8 rounded-xl border border-[#EFECE6] bg-white text-xs font-medium text-stone-800 focus:outline-none focus:border-[#D45266]"
             />
             {searchTerm && (
               <button
                 type="button"
                 onClick={() => handleSearchChange("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -682,7 +689,7 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
                         </button>
                         <button
                           type="button"
-                          onClick={() => setDeleteCandidate(p)}
+                          onClick={() => handleDeleteProduct(p)}
                           className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                           title="Delete product"
                         >
@@ -810,8 +817,9 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
                     </Link>
                     <button
                       type="button"
-                      onClick={() => setDeleteCandidate(p)}
-                      className="p-1 text-slate-400 hover:text-rose-600"
+                      onClick={() => handleDeleteProduct(p)}
+                      className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
+                      title="Delete product"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -822,61 +830,6 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
           })
         )}
       </div>
-
-      {/* Safe Delete Confirmation Modal */}
-      {deleteCandidate && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center gap-3 text-rose-600">
-              <div className="p-2.5 bg-rose-50 rounded-xl">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-black text-slate-900">
-                  Delete Product?
-                </h3>
-                <p className="text-xs text-slate-400">
-                  This action will permanently delete this product from the database.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
-              <div className="font-bold text-slate-900">{deleteCandidate.name}</div>
-              <div className="text-[11px] text-slate-400 font-mono">Slug: {deleteCandidate.slug}</div>
-              <div className="font-bold text-slate-700">{formatBDT(deleteCandidate.price)}</div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeleteCandidate(null)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                disabled={isDeleting}
-                onClick={confirmDeleteProduct}
-                className="px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl text-white bg-rose-600 hover:bg-rose-700 flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
-              >
-                {isDeleting ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Trash2 className="w-3.5 h-3.5" />
-                )}
-                <span>Confirm Delete</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

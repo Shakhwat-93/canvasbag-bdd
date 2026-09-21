@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Phone, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminAlert } from "@/components/admin/admin-alert-provider";
 import type { SupportMessage } from "@/lib/types";
 
 interface SupportManagerProps {
@@ -11,9 +12,15 @@ interface SupportManagerProps {
 
 export function SupportManager({ initialSupportMessages }: SupportManagerProps) {
   const [supportMessages, setSupportMessages] = useState<SupportMessage[]>(initialSupportMessages);
+  const { confirmDelete, alert: showAlert } = useAdminAlert();
 
-  const handleDeleteSupport = async (id: number | string) => {
-    if (!confirm("Are you sure you want to delete this support message?")) return;
+  const handleDeleteSupport = async (id: number | string, senderName?: string) => {
+    const ok = await confirmDelete(
+      senderName ? `message from ${senderName}` : "this support message",
+      "Are you sure you want to remove this message from your support inbox?"
+    );
+    if (!ok) return;
+
     try {
       const res = await fetch(`/api/admin/support?id=${id}`, { method: "DELETE" });
       const data = await res.json();
@@ -21,10 +28,18 @@ export function SupportManager({ initialSupportMessages }: SupportManagerProps) 
         setSupportMessages((prev) => prev.filter((m) => m.id !== id));
         toast.success("Support message deleted");
       } else {
-        toast.error(data.error || "Failed to delete message");
+        await showAlert({
+          title: "Delete Failed",
+          description: data.error || "Failed to delete message",
+          variant: "error",
+        });
       }
     } catch {
-      toast.error("Failed to delete message");
+      await showAlert({
+        title: "Delete Failed",
+        description: "Failed to connect to server.",
+        variant: "error",
+      });
     }
   };
 
@@ -69,7 +84,7 @@ export function SupportManager({ initialSupportMessages }: SupportManagerProps) 
 
               <button
                 type="button"
-                onClick={() => handleDeleteSupport(m.id)}
+                onClick={() => handleDeleteSupport(m.id, m.name)}
                 className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl cursor-pointer transition-colors"
                 title="Delete message"
               >

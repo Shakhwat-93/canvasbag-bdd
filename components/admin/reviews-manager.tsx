@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Star, CheckCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminAlert } from "@/components/admin/admin-alert-provider";
 import type { ProductReview } from "@/lib/types";
 
 interface ReviewsManagerProps {
@@ -11,6 +12,7 @@ interface ReviewsManagerProps {
 
 export function ReviewsManager({ initialReviews }: ReviewsManagerProps) {
   const [reviews, setReviews] = useState<ProductReview[]>(initialReviews);
+  const { confirmDelete, alert: showAlert } = useAdminAlert();
 
   const handleApproveReview = async (id: number | string) => {
     try {
@@ -33,8 +35,12 @@ export function ReviewsManager({ initialReviews }: ReviewsManagerProps) {
     }
   };
 
-  const handleDeleteReview = async (id: number | string) => {
-    if (!confirm("Are you sure you want to delete this review?")) return;
+  const handleDeleteReview = async (id: number | string, authorName?: string) => {
+    const ok = await confirmDelete(
+      authorName ? `review by ${authorName}` : "this customer review",
+      "Are you sure you want to delete this review? This action cannot be undone."
+    );
+    if (!ok) return;
     try {
       const res = await fetch(`/api/admin/review?id=${id}`, { method: "DELETE" });
       const data = await res.json();
@@ -42,10 +48,18 @@ export function ReviewsManager({ initialReviews }: ReviewsManagerProps) {
         setReviews((prev) => prev.filter((r) => r.id !== id));
         toast.success("Review deleted");
       } else {
-        toast.error(data.error || "Failed to delete review");
+        await showAlert({
+          title: "Delete Failed",
+          description: data.error || "Failed to delete review",
+          variant: "error",
+        });
       }
     } catch {
-      toast.error("Failed to delete review");
+      await showAlert({
+        title: "Delete Failed",
+        description: "Failed to connect to server.",
+        variant: "error",
+      });
     }
   };
 
@@ -120,7 +134,7 @@ export function ReviewsManager({ initialReviews }: ReviewsManagerProps) {
                 )}
                 <button
                   type="button"
-                  onClick={() => r.id && handleDeleteReview(r.id)}
+                  onClick={() => r.id && handleDeleteReview(r.id, r.customer_name)}
                   className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
                   title="Delete review"
                 >

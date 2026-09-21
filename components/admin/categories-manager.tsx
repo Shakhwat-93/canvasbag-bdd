@@ -26,6 +26,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminAlert } from "@/components/admin/admin-alert-provider";
 import type { Category, Product } from "@/lib/types";
 import { MediaPickerModal } from "@/components/admin/media-picker-modal";
 import {
@@ -354,6 +355,7 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
   const [categorySearchTerm, setCategorySearchTerm] = useState("");
   const [categoryStatusFilter, setCategoryStatusFilter] = useState<"all" | "active" | "inactive" | "visible" | "hidden">("all");
   const [expandedCategoryIds, setExpandedCategoryIds] = useState<Set<string>>(new Set());
+  const { confirmDelete, alert: showAlert } = useAdminAlert();
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [reassignChildrenTo, setReassignChildrenTo] = useState<string>("root");
   const [reassignProductsTo, setReassignProductsTo] = useState<string>("");
@@ -513,7 +515,52 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
     }
   };
 
-  const handleOpenDeleteCategory = (cat: Category) => {
+  const handleOpenDeleteCategory = async (cat: Category) => {
+    const childCount = categories.filter(
+      (c) => normalizeParentId(c.parentId ?? c.parent_id) === cat.id
+    ).length;
+    const prodCount = products.filter(
+      (p) => p.categorySlug === cat.slug || p.categoryId === cat.id
+    ).length;
+
+    // If category has no child categories or products, delete directly with Sweet Alert
+    if (childCount === 0 && prodCount === 0) {
+      const ok = await confirmDelete(
+        cat.name,
+        `Are you sure you want to permanently delete category "${cat.name}" (${cat.slug})? This action cannot be reversed.`
+      );
+      if (!ok) return;
+
+      try {
+        const res = await fetch(`/api/admin/category/${cat.id}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          setCategories((prev) => prev.filter((c) => c.id !== cat.id));
+          toast.success("Category deleted safely");
+          router.refresh();
+        } else {
+          await showAlert({
+            title: "Delete Failed",
+            description: data.error || "Failed to delete category.",
+            variant: "error",
+          });
+        }
+      } catch {
+        await showAlert({
+          title: "Delete Failed",
+          description: "An unexpected error occurred while deleting the category.",
+          variant: "error",
+        });
+      }
+      return;
+    }
+
+    // Has subcategories or products: open reassignment modal
     setCategoryToDelete(cat);
     const pId = normalizeParentId(cat.parentId ?? cat.parent_id);
     setReassignChildrenTo(pId || "root");
@@ -563,10 +610,18 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
         setCategoryToDelete(null);
         router.refresh();
       } else {
-        toast.error(data.error || "Failed to delete category");
+        await showAlert({
+          title: "Delete Failed",
+          description: data.error || "Failed to delete category.",
+          variant: "error",
+        });
       }
     } catch {
-      toast.error("Failed to delete category");
+      await showAlert({
+        title: "Delete Failed",
+        description: "An unexpected network error occurred while deleting the category.",
+        variant: "error",
+      });
     } finally {
       setIsDeletingCategory(false);
     }
@@ -1067,23 +1122,23 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
         </div>
       )}
 
-      {/* SAFE DELETE MODAL */}
+      {/* SAFE DELETE & REASSIGN MODAL */}
       {categoryToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-4 text-left">
-            <div className="flex items-center gap-3 text-red-600">
-              <div className="p-2.5 bg-red-50 rounded-2xl">
-                <AlertTriangle className="w-6 h-6" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-[440px] w-full p-6 sm:p-7 shadow-[0_12px_36px_rgba(0,0,0,0.12)] space-y-4 text-left border border-[#EFECE6] animate-in zoom-in-95">
+            <div className="flex items-center gap-3 text-[#D45266]">
+              <div className="w-10 h-10 bg-rose-50 rounded-2xl grid place-items-center shrink-0 border border-rose-100 ring-4 ring-rose-50/60">
+                <AlertTriangle className="w-5 h-5 text-[#D45266]" />
               </div>
               <div>
-                <h3 className="font-black text-lg text-slate-900">Delete Category</h3>
-                <p className="text-xs text-slate-500 font-medium">
-                  Safely reassign subcategories and products to prevent orphaned data
+                <h3 className="font-bold text-base text-stone-900 leading-tight">Delete Category</h3>
+                <p className="text-xs text-stone-400 font-medium">
+                  Reassign subcategories and products to prevent orphaned items
                 </p>
               </div>
             </div>
 
-            <div className="p-4 bg-amber-50/70 border border-amber-200/80 rounded-2xl text-xs text-amber-900 space-y-2">
+            <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-2xl text-xs text-amber-900 space-y-2">
               <p>
                 You are about to delete <span className="font-bold">{categoryToDelete.name}</span> (
                 <code className="font-mono font-bold text-[11px]">{categoryToDelete.slug}</code>).
@@ -1097,7 +1152,7 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
                 ).length;
 
                 return (
-                  <ul className="list-disc pl-4 space-y-1 font-semibold">
+                  <ul className="list-disc pl-4 space-y-1 font-semibold text-[11px]">
                     <li>{childCount} direct subcategories will need reassignment.</li>
                     <li>{prodCount} assigned products will need reassignment.</li>
                   </ul>
@@ -1107,11 +1162,11 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="font-bold text-slate-700">Reassign Subcategories to:</label>
+                <label className="font-bold text-stone-700">Reassign Subcategories to:</label>
                 <select
                   value={reassignChildrenTo}
                   onChange={(e) => setReassignChildrenTo(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 mt-1 font-medium bg-white"
+                  className="w-full h-10 px-3 rounded-xl border border-stone-200 mt-1 font-medium bg-white outline-hidden focus:border-[#D45266]"
                 >
                   <option value="root">📁 Promote to Root (No Parent)</option>
                   {categories
@@ -1125,11 +1180,11 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
               </div>
 
               <div>
-                <label className="font-bold text-slate-700">Reassign Affected Products to:</label>
+                <label className="font-bold text-stone-700">Reassign Affected Products to:</label>
                 <select
                   value={reassignProductsTo}
                   onChange={(e) => setReassignProductsTo(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 mt-1 font-medium bg-white"
+                  className="w-full h-10 px-3 rounded-xl border border-stone-200 mt-1 font-medium bg-white outline-hidden focus:border-[#D45266]"
                 >
                   {categories
                     .filter((c) => c.id !== categoryToDelete.id)
@@ -1142,12 +1197,12 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#EFECE6]">
               <button
                 type="button"
                 disabled={isDeletingCategory}
                 onClick={() => setCategoryToDelete(null)}
-                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                className="px-4 py-2.5 bg-stone-100 hover:bg-stone-200/80 rounded-full text-xs font-bold text-stone-700 cursor-pointer transition-all disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -1155,9 +1210,16 @@ export function CategoriesManager({ initialCategories, initialProducts }: Catego
                 type="button"
                 disabled={isDeletingCategory}
                 onClick={handleConfirmSafeDelete}
-                className="bg-red-600 text-white px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-red-700 cursor-pointer shadow-md disabled:opacity-50"
+                className="bg-[#D45266] hover:bg-[#BF4357] text-white px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
               >
-                {isDeletingCategory ? "Deleting..." : "Confirm & Delete"}
+                {isDeletingCategory ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <span>Confirm Delete</span>
+                )}
               </button>
             </div>
           </div>

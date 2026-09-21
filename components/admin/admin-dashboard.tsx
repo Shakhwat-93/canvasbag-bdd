@@ -43,6 +43,7 @@ import {
   slugifyCategory,
   type CategoryTreeNode,
 } from "@/lib/category-tree";
+import { useAdminAlert } from "@/components/admin/admin-alert-provider";
 
 interface AdminDashboardProps {
   initialSettings: SiteSettings;
@@ -248,6 +249,7 @@ export function AdminDashboard({
   initialSupportMessages,
   initialReviews,
 }: AdminDashboardProps) {
+  const { confirmDelete } = useAdminAlert();
   const [activeTab, setActiveTab] = useState<
     "products" | "categories" | "settings" | "landing_pages" | "support" | "reviews"
   >("products");
@@ -388,7 +390,12 @@ export function AdminDashboard({
 
   // Delete Product
   const handleDeleteProduct = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
+    const product = products.find((p) => p.id === id);
+    const confirmed = await confirmDelete(
+      product?.name || "Product",
+      "This product and its variant data will be permanently removed."
+    );
+    if (!confirmed) return;
     try {
       const res = await fetch(`/api/admin/product/${id}`, { method: "DELETE" });
       const data = await res.json();
@@ -656,7 +663,12 @@ export function AdminDashboard({
 
   // Delete Landing Page
   const handleDeleteLandingPage = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this landing page?")) return;
+    const page = landingPages.find((lp) => lp.id === id || lp.slug === id);
+    const confirmed = await confirmDelete(
+      page?.title || "Landing Page",
+      "This landing page will be permanently removed from your site."
+    );
+    if (!confirmed) return;
     try {
       const res = await fetch(`/api/admin/landing-page/${id}`, { method: "DELETE" });
       const data = await res.json();
@@ -731,7 +743,11 @@ export function AdminDashboard({
 
   // Delete Review
   const handleDeleteReview = async (id: number | string) => {
-    if (!confirm("Delete this review?")) return;
+    const confirmed = await confirmDelete(
+      "Review",
+      "This customer review will be permanently deleted."
+    );
+    if (!confirmed) return;
     try {
       const res = await fetch(`/api/admin/review?id=${id}`, { method: "DELETE" });
       const data = await res.json();
@@ -748,7 +764,11 @@ export function AdminDashboard({
 
   // Delete Support Message
   const handleDeleteSupport = async (id: number | string) => {
-    if (!confirm("Delete this support message?")) return;
+    const confirmed = await confirmDelete(
+      "Support Message",
+      "This inquiry message will be permanently removed."
+    );
+    if (!confirmed) return;
     try {
       const res = await fetch(`/api/admin/support?id=${id}`, { method: "DELETE" });
       const data = await res.json();

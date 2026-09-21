@@ -23,6 +23,7 @@ import {
   Layers,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminAlert } from "@/components/admin/admin-alert-provider";
 import type { MediaUsageItem } from "@/lib/media-usage";
 
 export interface MediaItem {
@@ -51,9 +52,8 @@ export function MediaLibrary({ initialItems }: MediaLibraryProps) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Deletion state
-  const [deleteCandidate, setDeleteCandidate] = useState<MediaItem | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  // Alert & Confirm
+  const { confirm, confirmDelete: askDeleteConfirm, alert: showAlert } = useAdminAlert();
 
   // Format bytes
   const formatSize = (bytes: number) => {
@@ -125,33 +125,60 @@ export function MediaLibrary({ initialItems }: MediaLibraryProps) {
     }
   };
 
-  // Handle safe delete
-  const confirmDelete = async (force = false) => {
-    if (!deleteCandidate) return;
+  // Handle safe delete with unified sweet alert
+  const handleDeleteMedia = async (item: MediaItem) => {
+    let confirmed = false;
 
-    setIsDeleting(true);
-    try {
-      const res = await fetch(`/api/admin/media?key=${encodeURIComponent(deleteCandidate.key)}${force ? "&force=true" : ""}`, {
-        method: "DELETE",
+    if (item.isUsed) {
+      confirmed = await confirm({
+        title: "Image Currently in Use!",
+        description: `This image is actively referenced by ${item.usedIn.length} product(s) or collection(s). Deleting it will cause broken images on your live storefront. Are you sure you want to force delete it?`,
+        variant: "warning",
+        confirmText: "Force Delete Anyway",
+        cancelText: "Cancel",
       });
+    } else {
+      const fileName = item.key.split("/").pop() || "media file";
+      confirmed = await askDeleteConfirm(
+        fileName,
+        `Are you sure you want to permanently delete "${fileName}" (${formatSize(item.size)}) from Cloudflare R2 storage?`
+      );
+    }
+
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(
+        `/api/admin/media?key=${encodeURIComponent(item.key)}${item.isUsed ? "&force=true" : ""}`,
+        { method: "DELETE" }
+      );
 
       const data = await res.json();
       if (data.success) {
-        setItems((prev) => prev.filter((i) => i.key !== deleteCandidate.key));
-        if (selectedMedia?.key === deleteCandidate.key) {
+        setItems((prev) => prev.filter((i) => i.key !== item.key));
+        if (selectedMedia?.key === item.key) {
           setSelectedMedia(null);
         }
-        setDeleteCandidate(null);
         toast.success("Media deleted from Cloudflare R2");
       } else if (res.status === 409) {
-        toast.error(data.error || "Cannot delete image: in use");
+        await showAlert({
+          title: "Cannot Delete Image",
+          description: data.error || "This image is in use. Check active products.",
+          variant: "error",
+        });
       } else {
-        toast.error(data.error || "Failed to delete media");
+        await showAlert({
+          title: "Delete Failed",
+          description: data.error || "Failed to delete media from storage.",
+          variant: "error",
+        });
       }
     } catch {
-      toast.error("Failed to delete media");
-    } finally {
-      setIsDeleting(false);
+      await showAlert({
+        title: "Delete Failed",
+        description: "An unexpected error occurred while deleting media.",
+        variant: "error",
+      });
     }
   };
 
@@ -374,7 +401,7 @@ export function MediaLibrary({ initialItems }: MediaLibraryProps) {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setDeleteCandidate(item);
+                          handleDeleteMedia(item);
                         }}
                         className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                         title="Delete asset"
@@ -467,7 +494,7 @@ export function MediaLibrary({ initialItems }: MediaLibraryProps) {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setDeleteCandidate(item)}
+                            onClick={() => handleDeleteMedia(item)}
                             className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"
                             title="Delete"
                           >
@@ -610,7 +637,7 @@ export function MediaLibrary({ initialItems }: MediaLibraryProps) {
               <button
                 type="button"
                 onClick={() => {
-                  setDeleteCandidate(selectedMedia);
+                  if (selectedMedia) handleDeleteMedia(selectedMedia);
                 }}
                 className="px-3.5 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
               >
@@ -624,92 +651,6 @@ export function MediaLibrary({ initialItems }: MediaLibraryProps) {
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer transition-colors"
               >
                 Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Safe Deletion Confirmation Modal */}
-      {deleteCandidate && (
-        <div
-          className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center gap-3 text-rose-600">
-              <div className="p-2.5 bg-rose-50 rounded-xl">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-black text-slate-900">
-                  Delete Media Object?
-                </h3>
-                <p className="text-xs text-slate-400">This action will permanently remove the file from Cloudflare R2.</p>
-              </div>
-            </div>
-
-            {/* Thumbnail */}
-            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200">
-              <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-200 shrink-0">
-                <Image
-                  src={deleteCandidate.url}
-                  alt={deleteCandidate.key}
-                  fill
-                  sizes="48px"
-                  className="object-cover"
-                />
-              </div>
-              <div className="min-w-0">
-                <div className="font-bold text-xs text-slate-900 truncate">
-                  {deleteCandidate.key.split("/").pop()}
-                </div>
-                <div className="text-[10px] text-slate-400 font-mono">
-                  {formatSize(deleteCandidate.size)}
-                </div>
-              </div>
-            </div>
-
-            {/* Usage Warning */}
-            {deleteCandidate.isUsed && (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs space-y-1">
-                <div className="font-bold flex items-center gap-1.5 text-amber-900">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>Image currently in use!</span>
-                </div>
-                <p className="text-[11px] leading-relaxed">
-                  This image is referenced by <strong>{deleteCandidate.usedIn.length}</strong> product(s) or page(s). Deleting it will result in broken images on your live storefront.
-                </p>
-              </div>
-            )}
-
-            {/* Modal Buttons */}
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeleteCandidate(null)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                disabled={isDeleting}
-                onClick={() => confirmDelete(deleteCandidate.isUsed)}
-                className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl text-white flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50 ${
-                  deleteCandidate.isUsed
-                    ? "bg-amber-600 hover:bg-amber-700"
-                    : "bg-rose-600 hover:bg-rose-700"
-                }`}
-              >
-                {isDeleting ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Trash2 className="w-3.5 h-3.5" />
-                )}
-                <span>{deleteCandidate.isUsed ? "Force Delete Anyway" : "Confirm Delete"}</span>
               </button>
             </div>
           </div>

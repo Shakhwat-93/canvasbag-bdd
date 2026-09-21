@@ -20,6 +20,7 @@ import {
   Package,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminAlert } from "@/components/admin/admin-alert-provider";
 import { formatBDT } from "@/lib/format";
 import type { LocalOrder } from "@/lib/types";
 
@@ -31,6 +32,7 @@ type OrderStatus = "all" | "pending" | "confirmed" | "dispatched" | "delivered" 
 
 export function OrdersManager({ initialOrders }: OrdersManagerProps) {
   const [orders, setOrders] = useState<LocalOrder[]>(initialOrders);
+  const { confirmDelete, alert: showAlert } = useAdminAlert();
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
@@ -101,9 +103,11 @@ export function OrdersManager({ initialOrders }: OrdersManagerProps) {
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    if (!confirm(`Are you sure you want to delete order #${orderId.slice(0, 8)}? This action cannot be undone.`)) {
-      return;
-    }
+    const ok = await confirmDelete(
+      `Order #${orderId.slice(0, 8)}`,
+      `Are you sure you want to delete order #${orderId.slice(0, 8)}? This action cannot be undone.`
+    );
+    if (!ok) return;
 
     setDeletingOrderId(orderId);
     try {
@@ -119,10 +123,18 @@ export function OrdersManager({ initialOrders }: OrdersManagerProps) {
         }
         toast.success("Order deleted successfully");
       } else {
-        toast.error(data.error || "Failed to delete order");
+        await showAlert({
+          title: "Delete Failed",
+          description: data.error || "Failed to delete order",
+          variant: "error",
+        });
       }
     } catch {
-      toast.error("Failed to delete order");
+      await showAlert({
+        title: "Delete Failed",
+        description: "An unexpected error occurred while deleting order.",
+        variant: "error",
+      });
     } finally {
       setDeletingOrderId(null);
     }
@@ -147,30 +159,30 @@ export function OrdersManager({ initialOrders }: OrdersManagerProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="bg-white rounded-3xl border border-[#EFECE6] p-5 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.02)] space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-150 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EFECE6] pb-5">
         <div>
-          <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <h2 className="text-xl font-black text-stone-900 tracking-tight flex items-center gap-2.5">
             <span>Orders Management</span>
-            <span className="text-xs bg-slate-100 text-slate-600 font-bold px-2.5 py-0.5 rounded-full">
+            <span className="text-xs bg-[#FAF8F5] text-stone-600 font-bold px-2.5 py-0.5 rounded-full border border-[#EFECE6]">
               {orders.length} Total
             </span>
           </h2>
-          <p className="text-xs text-slate-400 font-medium mt-0.5">
+          <p className="text-xs text-stone-400 font-medium mt-0.5">
             View customer details, ordered products, delivery zones, and manage fulfillment status
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl">
-            Total Revenue: <strong className="text-slate-900">{formatBDT(totalRevenue)}</strong>
+          <span className="text-xs font-bold text-stone-600 bg-[#FAF8F5] border border-[#EFECE6] px-3.5 py-1.5 rounded-full">
+            Total Revenue: <strong className="text-[#D45266] ml-1">{formatBDT(totalRevenue)}</strong>
           </span>
         </div>
       </div>
 
       {/* Filter Tabs & Search */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-[#FAF8F5] p-3.5 rounded-2xl border border-[#EFECE6]">
         {/* Status Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
           {[
@@ -186,17 +198,17 @@ export function OrdersManager({ initialOrders }: OrdersManagerProps) {
                 key={tab.id}
                 type="button"
                 onClick={() => setSelectedStatus(tab.id as OrderStatus)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   active
-                    ? "bg-slate-950 text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-950 hover:bg-white"
+                    ? "bg-[#D45266] text-white shadow-xs"
+                    : "text-stone-600 hover:text-stone-950 hover:bg-white"
                 }`}
               >
                 <span>{tab.label}</span>
                 {tab.count !== undefined && tab.count > 0 && (
                   <span
                     className={`ml-1.5 text-[10px] font-black px-1.5 py-0.2 rounded-full ${
-                      active ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-700"
+                      active ? "bg-white/25 text-white" : "bg-stone-200 text-stone-700"
                     }`}
                   >
                     {tab.count}
@@ -209,13 +221,13 @@ export function OrdersManager({ initialOrders }: OrdersManagerProps) {
 
         {/* Search */}
         <div className="relative min-w-[240px]">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by customer, phone, ID..."
-            className="w-full h-9 pl-9 pr-8 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:border-slate-900"
+            className="w-full h-9 pl-9 pr-8 rounded-xl border border-[#EFECE6] bg-white text-xs font-medium text-stone-800 focus:outline-none focus:border-[#D45266]"
           />
           {searchTerm && (
             <button

@@ -31,6 +31,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminAlert } from "@/components/admin/admin-alert-provider";
 import type { Category, Product, ProductVariant, ProductReview } from "@/lib/types";
 import { buildCategoryTree, flattenCategoryTree, slugifyCategory } from "@/lib/category-tree";
 import { MediaPickerModal } from "@/components/admin/media-picker-modal";
@@ -78,6 +79,7 @@ export function ProductForm({
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [mediaPickerTarget, setMediaPickerTarget] = useState<"gallery" | "variant">("gallery");
+  const { confirmUnsaved, confirmDelete, alert: showAlert } = useAdminAlert();
 
   // Form State
   const [product, setProduct] = useState<Partial<Product>>({
@@ -474,17 +476,20 @@ export function ProductForm({
     setIsDirty(true);
   };
 
-  const handleDeleteReview = (id: string | number | undefined) => {
+  const handleDeleteReview = async (id: string | number | undefined) => {
     if (!id) return;
+    const ok = await confirmDelete("this review", "Are you sure you want to remove this review?");
+    if (!ok) return;
     setReviews((prev) => prev.filter((r) => r.id !== id));
     setIsDirty(true);
     toast.success("Review deleted");
   };
 
   // Navigation Guard for Unsaved Changes
-  const handleBack = () => {
+  const handleBack = async () => {
     if (isDirty) {
-      if (confirm("You have unsaved changes. Are you sure you want to leave?")) {
+      const leave = await confirmUnsaved();
+      if (leave) {
         router.push("/admin/products");
       }
     } else {

@@ -1,21 +1,25 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
-  Package,
-  FolderTree,
-  Image as ImageIcon,
-  ShoppingBag,
-  Star,
-  MessageSquare,
-  Plus,
-  ArrowRight,
   TrendingUp,
   Clock,
   CheckCircle2,
-  ExternalLink,
+  Truck,
+  Package,
+  Plus,
+  ShoppingBag,
+  Sliders,
+  FolderTree,
   Settings as SettingsIcon,
+  ChevronRight,
+  ArrowRight,
+  RefreshCw,
+  Sparkles,
+  Layers,
 } from "lucide-react";
 import { formatBDT } from "@/lib/format";
 import type { LocalOrder, Product, Category, ProductReview, SupportMessage } from "@/lib/types";
@@ -29,6 +33,8 @@ interface DashboardOverviewProps {
   mediaCount: number;
 }
 
+type DateFilter = "today" | "7days" | "30days" | "all";
+
 export function AdminDashboardOverview({
   products,
   categories,
@@ -37,291 +43,547 @@ export function AdminDashboardOverview({
   supportMessages,
   mediaCount,
 }: DashboardOverviewProps) {
-  const activeProductsCount = products.filter((p) => p.status !== "inactive" && p.status !== "draft").length;
-  const pendingOrdersCount = orders.filter((o) => o.status === "pending" || o.status === "new" || !o.status).length;
-  const pendingReviewsCount = reviews.filter((r) => r.status === "pending").length;
+  const router = useRouter();
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const totalRevenue = orders
-    .filter((o) => o.status !== "cancelled")
-    .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    router.refresh();
+    setTimeout(() => setIsRefreshing(false), 600);
+  };
 
-  const recentOrders = orders.slice(0, 6);
+  // Filter orders based on active date filter
+  const filteredOrders = useMemo(() => {
+    if (dateFilter === "all") return orders;
 
-  const statCards = [
-    {
-      title: "Total Revenue",
-      value: formatBDT(totalRevenue),
-      subtitle: `${orders.length} total orders recorded`,
-      icon: TrendingUp,
-      color: "text-emerald-600 bg-emerald-50 border-emerald-100",
-      href: "/admin/orders",
-    },
-    {
-      title: "Orders to Process",
-      value: pendingOrdersCount,
-      subtitle: `${orders.length - pendingOrdersCount} completed or dispatched`,
-      icon: ShoppingBag,
-      color: "text-blue-600 bg-blue-50 border-blue-100",
-      href: "/admin/orders",
-      highlight: pendingOrdersCount > 0,
-    },
-    {
-      title: "Catalog Products",
-      value: products.length,
-      subtitle: `${activeProductsCount} published & active`,
-      icon: Package,
-      color: "text-slate-900 bg-slate-100 border-slate-200",
-      href: "/admin/products",
-    },
-    {
-      title: "Active Categories",
-      value: categories.length,
-      subtitle: "Multi-level hierarchy tree",
-      icon: FolderTree,
-      color: "text-purple-600 bg-purple-50 border-purple-100",
-      href: "/admin/categories",
-    },
-    {
-      title: "Pending Reviews",
-      value: pendingReviewsCount,
-      subtitle: `${reviews.length} total customer reviews`,
-      icon: Star,
-      color: "text-amber-600 bg-amber-50 border-amber-100",
-      href: "/admin/reviews",
-      highlight: pendingReviewsCount > 0,
-    },
-    {
-      title: "Cloudflare R2 Media",
-      value: mediaCount,
-      subtitle: "Optimized WebP assets in bucket",
-      icon: ImageIcon,
-      color: "text-rose-600 bg-rose-50 border-rose-100",
-      href: "/admin/media",
-    },
-  ];
+    const now = new Date();
+    const filterMs =
+      dateFilter === "today"
+        ? 24 * 60 * 60 * 1000
+        : dateFilter === "7days"
+        ? 7 * 24 * 60 * 60 * 1000
+        : 30 * 24 * 60 * 60 * 1000;
+
+    const threshold = new Date(now.getTime() - filterMs);
+
+    return orders.filter((o) => {
+      if (!o.created_at) return true;
+      const orderDate = new Date(o.created_at);
+      return orderDate >= threshold;
+    });
+  }, [orders, dateFilter]);
+
+  // KPI Calculations
+  const totalRevenue = useMemo(() => {
+    return filteredOrders
+      .filter((o) => (o.status || "").toLowerCase() !== "cancelled")
+      .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  }, [filteredOrders]);
+
+  const pendingOrdersCount = useMemo(() => {
+    return filteredOrders.filter((o) => {
+      const s = (o.status || "pending").toLowerCase();
+      return s === "pending" || s === "new" || !o.status;
+    }).length;
+  }, [filteredOrders]);
+
+  const confirmedOrdersCount = useMemo(() => {
+    return filteredOrders.filter((o) => {
+      const s = (o.status || "").toLowerCase();
+      return s === "confirmed" || s === "packaging" || s === "processing";
+    }).length;
+  }, [filteredOrders]);
+
+  const deliveredOrdersCount = useMemo(() => {
+    return filteredOrders.filter((o) => {
+      const s = (o.status || "").toLowerCase();
+      return s === "delivered" || s === "completed";
+    }).length;
+  }, [filteredOrders]);
+
+  const activeProducts = useMemo(() => {
+    return products.filter((p) => p.status !== "inactive" && p.status !== "draft");
+  }, [products]);
+
+  const activeProductsCount = activeProducts.length;
+
+  const recentOrders = useMemo(() => {
+    return filteredOrders.slice(0, 7);
+  }, [filteredOrders]);
+
+  const recentActiveProducts = useMemo(() => {
+    return activeProducts.slice(0, 5);
+  }, [activeProducts]);
 
   return (
-    <div className="space-y-8">
-      {/* Top Welcome & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-150 pb-6">
+    <div className="space-y-7 max-w-7xl mx-auto">
+      {/* ────────────────────────────────────────────────────────
+          1. HEADER & DATE FILTER
+         ──────────────────────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-            <span>Operations Dashboard</span>
+          {/* Performance Pill Badge */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FDF2F4] border border-[#F4C7CF] text-[#D45266] text-[10px] font-black uppercase tracking-wider mb-2.5">
+            <Sparkles className="w-3 h-3 text-[#D45266]" />
+            <span>Store Performance</span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-stone-900 tracking-tight">
+            Welcome, CanvasBag
           </h1>
-          <p className="text-xs text-slate-500 font-medium mt-1">
-            Real-time overview of catalog, customer orders, media storage, and support inquiries
+          <p className="text-xs sm:text-sm text-stone-500 font-medium mt-1">
+            Here&apos;s what&apos;s happening in your CanvasBag store today.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Link
-            href="/admin/products/new"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-gradient text-[var(--primary-foreground)] rounded-xl text-xs font-black uppercase tracking-wider shadow-sm hover:opacity-90 active:scale-95 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Product</span>
-          </Link>
-          <Link
-            href="/admin/media"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-xl text-xs font-bold transition-all shadow-2xs"
-          >
-            <ImageIcon className="w-3.5 h-3.5 text-slate-500" />
-            <span>Media Library</span>
-          </Link>
-          <Link
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 text-white hover:bg-slate-800 rounded-xl text-xs font-bold transition-all shadow-xs"
-          >
-            <span>Live Store</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      </div>
-
-      {/* KPI Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
-        {statCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <Link
-              key={card.title}
-              href={card.href}
-              className={`group relative p-5 rounded-2xl border transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
-                card.highlight
-                  ? "bg-amber-50/40 border-amber-200"
-                  : "bg-white border-slate-200 hover:border-slate-300"
+        {/* Date Filter Pills & Refresh */}
+        <div className="flex items-center gap-2 self-start md:self-end">
+          <div className="flex items-center bg-white border border-[#EFECE6] rounded-full p-1 shadow-xs text-xs font-bold text-stone-600">
+            <button
+              type="button"
+              onClick={() => setDateFilter("today")}
+              className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                dateFilter === "today"
+                  ? "bg-[#D45266] text-white shadow-xs"
+                  : "hover:text-stone-900"
               }`}
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    {card.title}
-                  </span>
-                  <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-1 tracking-tight">
-                    {card.value}
-                  </div>
-                  <p className="text-xs text-slate-400 font-medium mt-1">{card.subtitle}</p>
-                </div>
-                <div className={`p-3 rounded-xl border ${card.color}`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
-                <span>Manage</span>
-                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-              </div>
-            </Link>
-          );
-        })}
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={() => setDateFilter("7days")}
+              className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                dateFilter === "7days"
+                  ? "bg-[#D45266] text-white shadow-xs"
+                  : "hover:text-stone-900"
+              }`}
+            >
+              7 Days
+            </button>
+            <button
+              type="button"
+              onClick={() => setDateFilter("30days")}
+              className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                dateFilter === "30days"
+                  ? "bg-[#D45266] text-white shadow-xs"
+                  : "hover:text-stone-900"
+              }`}
+            >
+              30 Days
+            </button>
+            <button
+              type="button"
+              onClick={() => setDateFilter("all")}
+              className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                dateFilter === "all"
+                  ? "bg-[#D45266] text-white shadow-xs"
+                  : "hover:text-stone-900"
+              }`}
+            >
+              All
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleRefresh}
+            title="Refresh dashboard metrics"
+            className="h-9 w-9 rounded-full bg-white border border-[#EFECE6] hover:bg-[#FAF8F5] grid place-items-center text-stone-600 shadow-xs transition-colors cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-[#D45266]" : ""}`} />
+          </button>
+        </div>
       </div>
 
-      {/* Recent Orders Section */}
-      <div className="bg-slate-50/60 rounded-3xl border border-slate-200/80 p-5 sm:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <ShoppingBag className="w-4 h-4 text-slate-700" />
-              <span>Recent Customer Orders</span>
-            </h2>
-            <p className="text-xs text-slate-400 font-medium mt-0.5">
-              Latest cash on delivery orders received from the storefront
-            </p>
+      {/* ────────────────────────────────────────────────────────
+          2. 5 KPI CARDS ROW
+         ──────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {/* TOTAL REVENUE */}
+        <div className="bg-white rounded-3xl border border-[#EFECE6] p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-[#E5DFD7] transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+              Total Revenue
+            </span>
+            <div className="w-8 h-8 rounded-full bg-[#FDF2F4] text-[#D45266] grid place-items-center">
+              <TrendingUp className="w-4 h-4" />
+            </div>
           </div>
-          <Link
-            href="/admin/orders"
-            className="text-xs font-bold text-slate-700 hover:text-slate-950 flex items-center gap-1 group"
-          >
-            <span>View All Orders</span>
-            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-          </Link>
+          <div className="mt-4">
+            <div className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">
+              {formatBDT(totalRevenue)}
+            </div>
+            <div className="text-xs text-stone-400 font-medium mt-1">
+              {filteredOrders.length} orders
+            </div>
+          </div>
         </div>
 
-        {recentOrders.length === 0 ? (
-          <div className="py-12 text-center bg-white rounded-2xl border border-dashed border-slate-200">
-            <ShoppingBag className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p className="text-xs font-bold text-slate-500">No orders recorded yet.</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              When customers complete checkout, orders will appear here automatically.
-            </p>
+        {/* PENDING */}
+        <div className="bg-white rounded-3xl border border-[#EFECE6] p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-[#E5DFD7] transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+              Pending
+            </span>
+            <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 grid place-items-center">
+              <Clock className="w-4 h-4" />
+            </div>
           </div>
-        ) : (
-          <div className="overflow-x-auto bg-white rounded-2xl border border-slate-200 shadow-2xs">
+          <div className="mt-4">
+            <div className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">
+              {pendingOrdersCount}
+            </div>
+            <div className="text-xs text-stone-400 font-medium mt-1">
+              Needs review
+            </div>
+          </div>
+        </div>
+
+        {/* CONFIRMED */}
+        <div className="bg-white rounded-3xl border border-[#EFECE6] p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-[#E5DFD7] transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+              Confirmed
+            </span>
+            <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 grid place-items-center">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">
+              {confirmedOrdersCount}
+            </div>
+            <div className="text-xs text-stone-400 font-medium mt-1">
+              Packaging
+            </div>
+          </div>
+        </div>
+
+        {/* DELIVERED */}
+        <div className="bg-white rounded-3xl border border-[#EFECE6] p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-[#E5DFD7] transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+              Delivered
+            </span>
+            <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center">
+              <Truck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">
+              {deliveredOrdersCount}
+            </div>
+            <div className="text-xs text-stone-400 font-medium mt-1">
+              Completed
+            </div>
+          </div>
+        </div>
+
+        {/* ACTIVE PRODUCTS */}
+        <div className="bg-white rounded-3xl border border-[#EFECE6] p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between hover:border-[#E5DFD7] transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+              Active Products
+            </span>
+            <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 grid place-items-center">
+              <Package className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">
+              {activeProductsCount}
+            </div>
+            <div className="text-xs text-stone-400 font-medium mt-1">
+              Published
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ────────────────────────────────────────────────────────
+          3. QUICK ACTIONS SECTION
+         ──────────────────────────────────────────────────────── */}
+      <div className="bg-[#F5F1EB]/80 border border-[#EAE4DC] rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xs">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-full bg-[#D45266] text-white grid place-items-center text-xs font-black shadow-xs">
+            +
+          </div>
+          <h2 className="text-xs font-black uppercase tracking-wider text-stone-800">
+            Quick Actions
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {/* + New Product */}
+          <Link
+            href="/admin/products/new"
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-[#D45266] hover:bg-[#BF4357] text-white text-xs font-bold shadow-xs hover:shadow-sm active:scale-95 transition-all text-center"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ New Product</span>
+          </Link>
+
+          {/* Collections / Landing Pages */}
+          <Link
+            href="/admin/landing-pages"
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white hover:bg-[#FAF8F5] border border-[#E5DFD7] text-stone-800 text-xs font-bold shadow-2xs transition-all text-center"
+          >
+            <Layers className="w-4 h-4 text-[#D45266]" />
+            <span>Collections</span>
+          </Link>
+
+          {/* Hero Slides */}
+          <Link
+            href="/admin/settings#hero-slides"
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white hover:bg-[#FAF8F5] border border-[#E5DFD7] text-stone-800 text-xs font-bold shadow-2xs transition-all text-center"
+          >
+            <Sliders className="w-4 h-4 text-[#D45266]" />
+            <span>Hero Banner</span>
+          </Link>
+
+          {/* Categories */}
+          <Link
+            href="/admin/categories"
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white hover:bg-[#FAF8F5] border border-[#E5DFD7] text-stone-800 text-xs font-bold shadow-2xs transition-all text-center"
+          >
+            <FolderTree className="w-4 h-4 text-[#D45266]" />
+            <span>Categories</span>
+          </Link>
+
+          {/* Site Settings */}
+          <Link
+            href="/admin/settings"
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white hover:bg-[#FAF8F5] border border-[#E5DFD7] text-stone-800 text-xs font-bold shadow-2xs transition-all text-center col-span-2 sm:col-span-1"
+          >
+            <SettingsIcon className="w-4 h-4 text-stone-500" />
+            <span>Settings</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* ────────────────────────────────────────────────────────
+          4. MAIN 2-COLUMN SPLIT: RECENT ORDERS & ACTIVE PRODUCTS
+         ──────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* LEFT COLUMN: RECENT ORDERS (approx 65% width) */}
+        <div className="lg:col-span-8 bg-white rounded-3xl border border-[#EFECE6] p-5 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.02)] space-y-5">
+          <div className="flex items-center justify-between pb-2">
+            <div>
+              <h2 className="text-lg font-black text-stone-900 tracking-tight">
+                Recent Orders
+              </h2>
+              <p className="text-xs text-stone-400 mt-0.5">
+                Latest purchases across Bangladesh
+              </p>
+            </div>
+
+            <span className="text-xs font-semibold text-stone-400 bg-stone-100 px-2.5 py-1 rounded-full">
+              {filteredOrders.length} records
+            </span>
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-150 text-slate-400 font-bold uppercase tracking-wider bg-slate-50/50">
-                  <th className="py-3 px-4">Order ID</th>
-                  <th className="py-3 px-4">Customer</th>
-                  <th className="py-3 px-4">City / Area</th>
-                  <th className="py-3 px-4">Items</th>
-                  <th className="py-3 px-4">Total</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Action</th>
+                <tr className="border-b border-[#EFECE6] text-[10px] font-black text-stone-400 uppercase tracking-wider">
+                  <th className="pb-3 font-black">Order</th>
+                  <th className="pb-3 font-black">Customer</th>
+                  <th className="pb-3 font-black">City</th>
+                  <th className="pb-3 font-black">Amount</th>
+                  <th className="pb-3 font-black">Status</th>
+                  <th className="pb-3 font-black text-right">Items</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                {recentOrders.map((order) => {
-                  const statusColors: Record<string, string> = {
-                    pending: "bg-amber-50 text-amber-700 border-amber-200",
-                    new: "bg-amber-50 text-amber-700 border-amber-200",
-                    confirmed: "bg-blue-50 text-blue-700 border-blue-200",
-                    dispatched: "bg-purple-50 text-purple-700 border-purple-200",
-                    delivered: "bg-emerald-50 text-emerald-700 border-emerald-200",
-                    cancelled: "bg-rose-50 text-rose-700 border-rose-200",
-                  };
-                  const badgeClass = statusColors[order.status?.toLowerCase() || "pending"] || statusColors.pending;
-
-                  return (
-                    <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                        #{order.id.slice(0, 8)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">{order.customer_name}</div>
-                        <div className="text-[11px] text-slate-400 font-mono">{order.phone}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-slate-700 font-semibold">{order.city}</span>
-                        {order.area && <span className="text-slate-400 text-[11px]"> ({order.area})</span>}
-                      </td>
-                      <td className="py-3 px-4 text-slate-600">
-                        {order.items?.length || 1} item(s)
-                      </td>
-                      <td className="py-3 px-4 font-bold text-slate-900">
-                        {formatBDT(order.total)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${badgeClass}`}>
-                          {order.status || "pending"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <Link
-                          href="/admin/orders"
-                          className="text-xs font-bold text-slate-600 hover:text-slate-950 underline underline-offset-2"
-                        >
-                          View
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
+              <tbody className="divide-y divide-[#F7F5F0]">
+                {recentOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-stone-400 font-medium">
+                      No orders recorded for this time range.
+                    </td>
+                  </tr>
+                ) : (
+                  recentOrders.map((order) => {
+                    const normStatus = (order.status || "pending").toLowerCase();
+                    return (
+                      <tr key={order.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
+                        <td className="py-3.5 font-bold font-mono text-stone-900 text-xs">
+                          {order.id}
+                        </td>
+                        <td className="py-3.5">
+                          <div className="font-bold text-stone-900">{order.customer_name}</div>
+                          <div className="text-[11px] text-stone-400 font-mono">
+                            {order.phone || "—"}
+                          </div>
+                        </td>
+                        <td className="py-3.5 text-stone-600 font-medium">
+                          {order.city || "Outside Dhaka"}
+                        </td>
+                        <td className="py-3.5 font-black text-[#D45266]">
+                          {formatBDT(order.total || 0)}
+                        </td>
+                        <td className="py-3.5">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                              normStatus === "confirmed" || normStatus === "packaging"
+                                ? "bg-blue-50 text-blue-700 border-blue-200"
+                                : normStatus === "delivered" || normStatus === "completed"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : normStatus === "cancelled"
+                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                            }`}
+                          >
+                            {order.status || "Pending"}
+                          </span>
+                        </td>
+                        <td className="py-3.5 text-right font-mono text-stone-400 text-[11px]">
+                          {order.items?.length || 1} item(s)
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
-        )}
-      </div>
 
-      {/* Quick Navigation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Link
-          href="/admin/support"
-          className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-xs transition-all flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
-              <MessageSquare className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-900">Support Inbox</div>
-              <div className="text-[11px] text-slate-400">{supportMessages.length} customer messages</div>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-slate-700 transition-colors" />
-        </Link>
+          {/* Mobile Orders Cards */}
+          <div className="sm:hidden space-y-3">
+            {recentOrders.length === 0 ? (
+              <div className="py-8 text-center text-stone-400 text-xs font-medium">
+                No orders recorded.
+              </div>
+            ) : (
+              recentOrders.map((order) => {
+                const normStatus = (order.status || "pending").toLowerCase();
+                return (
+                  <div
+                    key={order.id}
+                    className="p-3.5 bg-[#FAF8F5]/60 border border-[#EFECE6] rounded-2xl space-y-2 text-xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono font-black text-stone-900">{order.id}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${
+                          normStatus === "confirmed" || normStatus === "packaging"
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                            : normStatus === "delivered" || normStatus === "completed"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : normStatus === "cancelled"
+                            ? "bg-rose-50 text-rose-700 border-rose-200"
+                            : "bg-amber-50 text-amber-700 border-amber-200"
+                        }`}
+                      >
+                        {order.status || "Pending"}
+                      </span>
+                    </div>
 
-        <Link
-          href="/admin/reviews"
-          className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-xs transition-all flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
-              <Star className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-900">Reviews Moderation</div>
-              <div className="text-[11px] text-slate-400">{pendingReviewsCount} pending review(s)</div>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-slate-700 transition-colors" />
-        </Link>
+                    <div className="flex items-center justify-between text-stone-700">
+                      <div>
+                        <div className="font-bold">{order.customer_name}</div>
+                        <div className="text-[11px] text-stone-400 font-mono">{order.phone}</div>
+                      </div>
+                      <div className="font-black text-[#D45266] text-sm">
+                        {formatBDT(order.total || 0)}
+                      </div>
+                    </div>
 
-        <Link
-          href="/admin/settings"
-          className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-xs transition-all flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-slate-100 text-slate-700 rounded-xl">
-              <SettingsIcon className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-900">Site Settings</div>
-              <div className="text-[11px] text-slate-400">Tracking, shipping & banners</div>
-            </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-[#EFECE6] text-[11px]">
+                      <span className="text-stone-400">{order.city || "Outside Dhaka"}</span>
+                      <span className="font-mono text-stone-500 font-semibold">
+                        {order.items?.length || 1} item(s)
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
-          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-slate-700 transition-colors" />
-        </Link>
+        </div>
+
+        {/* RIGHT COLUMN: ACTIVE PRODUCTS / DROPS (approx 35% width) */}
+        <div className="lg:col-span-4 bg-white rounded-3xl border border-[#EFECE6] p-5 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.02)] space-y-5">
+          <div className="flex items-center justify-between pb-2">
+            <h2 className="text-lg font-black text-stone-900 tracking-tight">
+              Active Products
+            </h2>
+            <Link
+              href="/admin/products"
+              className="text-xs font-bold text-[#D45266] hover:text-[#BF4357]"
+            >
+              Manage All ({products.length})
+            </Link>
+          </div>
+
+          <div className="divide-y divide-[#F7F5F0]">
+            {recentActiveProducts.length === 0 ? (
+              <div className="py-8 text-center text-stone-400 text-xs font-medium">
+                No active products found.
+              </div>
+            ) : (
+              recentActiveProducts.map((p) => {
+                const imgUrl =
+                  p.image ||
+                  p.imageUrl ||
+                  (p.images?.[0]
+                    ? typeof p.images[0] === "string"
+                      ? p.images[0]
+                      : p.images[0].url
+                    : "/brand/logo.webp");
+
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/admin/products/${p.id}/edit`}
+                    className="flex items-center justify-between gap-3 py-3 hover:bg-[#FAF8F5] -mx-2 px-2 rounded-2xl transition-colors group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-stone-100 border border-[#EFECE6] shrink-0">
+                        <Image
+                          src={imgUrl}
+                          alt={p.name}
+                          fill
+                          sizes="44px"
+                          className="object-cover"
+                        />
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="font-bold text-xs text-stone-900 truncate group-hover:text-[#D45266] transition-colors">
+                          {p.name}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="font-black text-[#D45266] text-xs">
+                            {formatBDT(p.price)}
+                          </span>
+                          <span className="text-[10px] text-stone-400 font-medium">
+                            {p.categoryName || p.categorySlug}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-stone-700 transition-colors shrink-0" />
+                  </Link>
+                );
+              })
+            )}
+          </div>
+
+          {/* Quick link to Add Product */}
+          <div className="pt-2">
+            <Link
+              href="/admin/products/new"
+              className="w-full py-2.5 px-4 rounded-2xl border border-dashed border-[#E5DFD7] hover:border-[#D45266] hover:bg-[#FDF2F4] text-stone-600 hover:text-[#D45266] font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Another Product</span>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
