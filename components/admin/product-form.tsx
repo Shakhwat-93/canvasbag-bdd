@@ -1732,25 +1732,67 @@ export function ProductForm({
 
           {/* Visibility & Catalog Status */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <span className="w-1.5 h-5 bg-[#ff6b35] rounded-full" />
-              <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-900">
-                Visibility &amp; Status
-              </h2>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-5 bg-[#ff6b35] rounded-full" />
+                <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-900">
+                  ওয়েবসাইট ভিজিবিলিটি (অন / অফ)
+                </h2>
+              </div>
+              <span
+                className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                  product.status !== "inactive" && product.status !== "draft"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                    : "bg-slate-100 text-slate-600 border-slate-300"
+                }`}
+              >
+                {product.status !== "inactive" && product.status !== "draft"
+                  ? "অন (Active)"
+                  : "অফ (Hidden)"}
+              </span>
             </div>
 
-            <div>
-              <label className="font-bold text-slate-800 text-xs block mb-1.5">Catalog Status</label>
-              <select
-                value={product.status || "active"}
-                onChange={(e) => updateProduct({ status: e.target.value as any })}
-                className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white font-bold text-xs text-slate-800 shadow-2xs capitalize cursor-pointer"
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => updateProduct({ status: "active" })}
+                className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
+                  product.status !== "inactive" && product.status !== "draft"
+                    ? "border-emerald-500 bg-emerald-50/50 shadow-xs ring-1 ring-emerald-400"
+                    : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
+                }`}
               >
-                <option value="active">Active (Visible in Store)</option>
-                <option value="inactive">Inactive (Hidden from Customers)</option>
-                <option value="draft">Draft (Unpublished)</option>
-              </select>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-200" />
+                  <span className="font-extrabold text-xs text-slate-900">অন (Active)</span>
+                </div>
+                <span className="text-[10px] text-slate-500 leading-tight">
+                  ওয়েবসাইটে লাইভ দেখাবে
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => updateProduct({ status: "inactive" })}
+                className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
+                  product.status === "inactive" || product.status === "draft"
+                    ? "border-slate-800 bg-slate-100 shadow-xs ring-1 ring-slate-700"
+                    : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                  <span className="font-extrabold text-xs text-slate-900">অফ (Hidden)</span>
+                </div>
+                <span className="text-[10px] text-slate-500 leading-tight">
+                  ওয়েবসাইট থেকে লুকানো থাকবে
+                </span>
+              </button>
             </div>
+
+            <p className="text-[11px] text-slate-400 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              💡 <strong>নোট:</strong> &ldquo;অফ (Hidden)&rdquo; করে সেভ করলে প্রোডাক্টটি হোমপেজ, ক্যাটাগরি, শপ ও সার্চ কোথাও দেখাবে না। গ্রাহক সরাসরি লিঙ্কে ঢুকলেও Not Found দেখাবে।
+            </p>
 
             {/* Featured Product Toggle */}
             <div className="pt-3 border-t border-slate-100">

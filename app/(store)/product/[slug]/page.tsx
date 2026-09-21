@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const products = await supabaseCatalogService.getCatalogProducts();
   const product = products.find((p) => p.slug === slug);
 
-  if (!product) {
+  if (!product || product.status === "inactive" || product.status === "draft") {
     return { title: "Product Not Found | CanvasBag" };
   }
 
@@ -47,7 +47,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   ]);
 
   const product = products.find((p) => p.slug === slug);
-  if (!product) {
+  if (!product || product.status === "inactive" || product.status === "draft") {
     notFound();
   }
 
@@ -73,10 +73,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
     reviewCount,
   };
 
-  // Related products in same category
+  // Related products in same category (strictly active only)
   const categorySlug = product.categorySlug || (product as any).category_slug;
   const relatedProducts = products
-    .filter((p) => (p.categorySlug === categorySlug || (p as any).category_slug === categorySlug) && p.id !== product.id)
+    .filter(
+      (p) =>
+        p.status !== "inactive" &&
+        p.status !== "draft" &&
+        (p.categorySlug === categorySlug || (p as any).category_slug === categorySlug) &&
+        p.id !== product.id
+    )
     .slice(0, 4);
 
   return (

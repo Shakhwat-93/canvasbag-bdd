@@ -169,7 +169,8 @@ export async function getCategoryTreeData(): Promise<CategoryTreeNode[]> {
     supabaseCatalogService.getCatalogProducts(),
   ]);
 
-  return buildCategoryTree(categories, products);
+  const activeProducts = products.filter((p) => p.status !== "inactive" && p.status !== "draft");
+  return buildCategoryTree(categories, activeProducts);
 }
 
 /**

@@ -39,5 +39,7 @@ export default async function DynamicLandingPage({ params }: LandingPageProps) {
     notFound();
   }
 
-  return <LandingPageView page={page} products={products} settings={settings} />;
+  const activeProducts = products.filter((p) => p.status !== "inactive" && p.status !== "draft");
+
+  return <LandingPageView page={page} products={activeProducts} settings={settings} />;
 }

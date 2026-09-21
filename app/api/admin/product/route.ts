@@ -11,7 +11,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
+    const rawBody = await req.json();
+    const body = rawBody?.product || rawBody || {};
     let {
       id,
       name,
@@ -184,3 +185,73 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || "Failed to save product" }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  if (!(await isUserAdmin())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await req.json();
+    const { id, status, isFeatured, isBestSeller } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
+    }
+
+    const existingProducts = await getCatalogProducts({ forceFresh: true });
+    const existing = existingProducts.find((p) => p.id === id);
+    if (!existing) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    const nextStatus =
+      status !== undefined
+        ? status === "active"
+          ? "active"
+          : "inactive"
+        : existing.status || "active";
+
+    const updatedProduct = {
+      ...existing,
+      status: nextStatus,
+      ...(isFeatured !== undefined
+        ? { isFeatured: Boolean(isFeatured), is_featured: Boolean(isFeatured) }
+        : {}),
+      ...(isBestSeller !== undefined
+        ? { isBestSeller: Boolean(isBestSeller), is_best_seller: Boolean(isBestSeller) }
+        : {}),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const saved = await supabaseCatalogService.upsertProduct(id, updatedProduct);
+    if (!saved) {
+      return NextResponse.json({ error: "Failed to update product in database" }, { status: 500 });
+    }
+
+    // Atomic cache invalidation across all storefront routes
+    await supabaseCatalogService.revalidateCatalog("products");
+    try {
+      if (updatedProduct.categorySlug) {
+        revalidatePath(`/category/${updatedProduct.categorySlug}`);
+      }
+      revalidatePath(`/product/${updatedProduct.slug}`);
+      revalidatePath("/admin/products");
+      revalidatePath("/");
+      revalidatePath("/shop");
+    } catch {
+      // Non-fatal
+    }
+
+    return NextResponse.json(
+      { success: true, product: saved },
+      {
+        headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" },
+      }
+    );
+  } catch (error: any) {
+    console.error("[Product PATCH API Error]", error);
+    return NextResponse.json({ error: error.message || "Failed to update product" }, { status: 500 });
+  }
+}
+

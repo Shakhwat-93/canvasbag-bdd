@@ -60,6 +60,9 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
   // Duplicate state
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
+  // Status toggle state
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
   // Filtered & Sorted products
   const displayedProducts = useMemo(() => {
     let list = products.filter((p) => {
@@ -276,29 +279,84 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
     });
   };
 
-  const handleBulkStatus = async (status: "active" | "inactive") => {
-    if (selectedIds.size === 0) return;
-    toast.loading(`Updating ${selectedIds.size} products...`, { id: "bulk-status" });
+  const handleToggleProductStatus = async (productToToggle: Product) => {
+    const isCurrentlyActive =
+      productToToggle.status !== "inactive" && productToToggle.status !== "draft";
+    const nextStatus: "active" | "inactive" = isCurrentlyActive ? "inactive" : "active";
+
+    setTogglingId(productToToggle.id);
+
+    // Optimistic UI update
+    setProducts((prev) =>
+      prev.map((p) => (p.id === productToToggle.id ? { ...p, status: nextStatus } : p))
+    );
 
     try {
-      const promises = Array.from(selectedIds).map((id) => {
-        const prod = products.find((p) => p.id === id);
-        if (!prod) return Promise.resolve();
-        return fetch("/api/admin/product", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ product: { ...prod, status } }),
-        });
+      const res = await fetch("/api/admin/product", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: productToToggle.id, status: nextStatus }),
       });
+
+      const data = await res.json();
+      if (data.success) {
+        if (nextStatus === "active") {
+          toast.success(`"${productToToggle.name}" এখন ওয়েবসাইটে সক্রিয় (Active / অন)`, {
+            description: "প্রোডাক্টটি স্টোরফ্রন্ট, শপ ও ক্যাটাগরি পেজে লাইভ দেখাচ্ছে।",
+          });
+        } else {
+          toast.info(`"${productToToggle.name}" ওয়েবসাইট থেকে লুকানো হয়েছে (Inactive / অফ)`, {
+            description: "গ্রাহকরা এই প্রোডাক্ট ওয়েবসাইটে দেখতে পাবেন না।",
+          });
+        }
+      } else {
+        // Rollback on error
+        setProducts((prev) =>
+          prev.map((p) =>
+            p.id === productToToggle.id ? { ...p, status: productToToggle.status } : p
+          )
+        );
+        toast.error(data.error || "স্ট্যাটাস পরিবর্তন ব্যর্থ হয়েছে");
+      }
+    } catch {
+      // Rollback on error
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === productToToggle.id ? { ...p, status: productToToggle.status } : p
+        )
+      );
+      toast.error("নেটওয়ার্ক সমস্যার কারণে স্ট্যাটাস পরিবর্তন করা যায়নি");
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleBulkStatus = async (status: "active" | "inactive") => {
+    if (selectedIds.size === 0) return;
+    const toastId = toast.loading(
+      `${selectedIds.size}টি প্রোডাক্ট ${status === "active" ? "অন (Active)" : "অফ (Inactive)"} করা হচ্ছে...`
+    );
+
+    try {
+      const promises = Array.from(selectedIds).map((id) =>
+        fetch("/api/admin/product", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, status }),
+        })
+      );
 
       await Promise.all(promises);
       setProducts((prev) =>
         prev.map((p) => (selectedIds.has(p.id) ? { ...p, status } : p))
       );
-      toast.success(`Updated ${selectedIds.size} products to ${status}`, { id: "bulk-status" });
+      toast.success(
+        `${selectedIds.size}টি প্রোডাক্ট সফলভাবে ${status === "active" ? "অন (Active)" : "অফ (Inactive)"} করা হয়েছে`,
+        { id: toastId }
+      );
       setSelectedIds(new Set());
     } catch {
-      toast.error("Bulk update failed", { id: "bulk-status" });
+      toast.error("বাল্ক স্ট্যাটাস আপডেট করতে সমস্যা হয়েছে", { id: toastId });
     }
   };
 
@@ -463,7 +521,7 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
               <th className="pb-3">Product Name</th>
               <th className="pb-3">Category</th>
               <th className="pb-3">Price</th>
-              <th className="pb-3">Status</th>
+              <th className="pb-3 text-center">Status / অন-অফ</th>
               <th className="pb-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -576,16 +634,29 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
                         </span>
                       )}
                     </td>
-                    <td className="py-3">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                    <td className="py-3 text-center">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleProductStatus(p)}
+                        disabled={togglingId === p.id}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer border select-none disabled:opacity-50 ${
                           isActive
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : "bg-slate-100 text-slate-600 border-slate-200"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                            : "bg-slate-100 text-slate-500 border-slate-300 hover:bg-slate-200"
                         }`}
+                        title={isActive ? "ক্লিক করে অফ (হাইড) করুন" : "ক্লিক করে অন (লাইভ) করুন"}
                       >
-                        {p.status || "active"}
-                      </span>
+                        {togglingId === p.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin text-slate-500" />
+                        ) : (
+                          <span
+                            className={`w-2 h-2 rounded-full transition-transform ${
+                              isActive ? "bg-emerald-600 ring-2 ring-emerald-300/60" : "bg-slate-400"
+                            }`}
+                          />
+                        )}
+                        <span>{isActive ? "অন (Active)" : "অফ (Hidden)"}</span>
+                      </button>
                     </td>
                     <td className="py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
@@ -659,15 +730,28 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
                       <h3 className="text-sm font-bold text-slate-900 truncate">{p.name}</h3>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border shrink-0 ${
+                      <button
+                        type="button"
+                        onClick={() => handleToggleProductStatus(p)}
+                        disabled={togglingId === p.id}
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer shrink-0 select-none disabled:opacity-50 ${
                           isActive
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : "bg-slate-100 text-slate-600 border-slate-200"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                            : "bg-slate-100 text-slate-500 border-slate-300 hover:bg-slate-200"
                         }`}
+                        title={isActive ? "ক্লিক করে অফ করুন" : "ক্লিক করে অন করুন"}
                       >
-                        {p.status || "active"}
-                      </span>
+                        {togglingId === p.id ? (
+                          <Loader2 className="w-2.5 h-2.5 animate-spin text-slate-500" />
+                        ) : (
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isActive ? "bg-emerald-600 ring-2 ring-emerald-300/60" : "bg-slate-400"
+                            }`}
+                          />
+                        )}
+                        <span>{isActive ? "অন" : "অফ"}</span>
+                      </button>
                     </div>
 
                     <div className="text-[11px] text-slate-400 font-mono truncate mt-0.5">
