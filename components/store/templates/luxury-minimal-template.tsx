@@ -99,11 +99,59 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
     if (el) el.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/\D/g, "");
+
+    // If pasted with 88 or +88 prefix (e.g. 88017... -> 017...)
+    if (raw.startsWith("8801")) {
+      raw = raw.slice(2);
+    }
+
+    // Auto-prepend 0 if user types 1... (e.g. 17... -> 017...)
+    if (raw.startsWith("1") && raw.length <= 10) {
+      raw = "0" + raw;
+    }
+
+    // Strictly enforce starting with 01
+    if (raw.length === 1 && raw !== "0") {
+      raw = "0";
+    }
+    if (raw.length >= 2 && !raw.startsWith("01")) {
+      raw = "01" + raw.replace(/^0+/, "").replace(/^1+/, "");
+    }
+
+    // Never allow more than 11 digits
+    const cleaned = raw.slice(0, 11);
+    setPhone(cleaned);
+
+    if (cleaned.length === 11) {
+      if (/^01[3-9]\d{8}$/.test(cleaned)) {
+        setPhoneError("");
+      } else {
+        setPhoneError("সঠিক বাংলাদেশি মোবাইল অপারেটর নাম্বার দিন (যেমন: 01712345678)");
+      }
+    } else if (cleaned.length > 0) {
+      setPhoneError(`১১ ডিজিটের মোবাইল নাম্বার দিন (বাকি ${11 - cleaned.length} ডিজিট)`);
+    } else {
+      setPhoneError("");
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    if (!phone) {
+      setPhoneError("মোবাইল নাম্বার আবশ্যক");
+    } else if (!isValidBDPhone(phone)) {
+      setPhoneError("মোবাইল নাম্বারটি অবশ্যই ০১ দিয়ে শুরু হওয়া ১১ ডিজিটের নাম্বার হতে হবে (যেমন: 01712345678)");
+    } else {
+      setPhoneError("");
+    }
+  };
+
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValidBDPhone(phone)) {
-      setPhoneError("সঠিক ১১ ডিজিটের মোবাইল নাম্বার দিন");
-      toast.error("সঠিক মোবাইল নাম্বার দিন");
+      setPhoneError("মোবাইল নাম্বারটি অবশ্যই ০১ দিয়ে শুরু হওয়া ১১ ডিজিটের নাম্বার হতে হবে (যেমন: 01712345678)");
+      toast.error("সঠিক ১১ ডিজিটের মোবাইল নাম্বার দিন");
       return;
     }
     setPhoneError("");
@@ -136,6 +184,7 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
           phone: phone.trim(),
           address: address.trim(),
           shipping_zone: shippingZone,
+          delivery_fee: deliveryFee,
           note: note.trim(),
           items: cartItems,
           source: `Landing Page: ${page.title || page.slug || page.id}`,
@@ -145,6 +194,26 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
 
       const data = await res.json();
       if (data.success && data.orderId) {
+        try {
+          localStorage.setItem(
+            "cb_pending_order",
+            JSON.stringify({
+              orderId: data.orderId,
+              name: name.trim(),
+              phone: phone.trim(),
+              address: address.trim(),
+              shippingZone,
+              subtotal: unitPrice * quantity,
+              deliveryFee,
+              discount: 0,
+              total: data.total || total,
+              items: cartItems,
+            })
+          );
+        } catch (storageErr) {
+          console.warn("Storage write error", storageErr);
+        }
+
         toast.success("অর্ডার সফলভাবে সম্পন্ন হয়েছে!");
         router.push(`/order/success/${data.orderId}`);
       } else {
@@ -318,16 +387,54 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">মোবাইল নাম্বার *</label>
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="01XXXXXXXXX"
-                  className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm font-semibold outline-none focus:border-black"
-                />
-                {phoneError && <p className="text-xs text-red-500 font-semibold mt-1">{phoneError}</p>}
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">মোবাইল নাম্বার *</label>
+                  <span className={`text-[11px] font-bold ${
+                    phone.length === 11 && isValidBDPhone(phone)
+                      ? "text-emerald-600"
+                      : phone.length > 0
+                      ? "text-amber-600"
+                      : "text-slate-400"
+                  }`}>
+                    {phone.length}/11 ডিজিট {phone.length === 11 && isValidBDPhone(phone) ? "✓" : ""}
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    required
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    maxLength={11}
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    onBlur={handlePhoneBlur}
+                    placeholder="01XXXXXXXXX (১১ ডিজিট)"
+                    className={`w-full h-12 px-4 pr-10 rounded-xl border text-sm font-semibold outline-none transition-colors ${
+                      phoneError
+                        ? "border-red-500 focus:border-red-500"
+                        : phone.length === 11 && isValidBDPhone(phone)
+                        ? "border-emerald-500 focus:border-emerald-500"
+                        : "border-slate-200 focus:border-black"
+                    }`}
+                  />
+                  {phone.length === 11 && isValidBDPhone(phone) && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-600 font-bold text-xs flex items-center gap-1 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                      <Check className="w-3.5 h-3.5" />
+                      <span>সঠিক</span>
+                    </div>
+                  )}
+                </div>
+                {phoneError ? (
+                  <p className="text-xs text-red-500 font-semibold mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {phoneError}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    ০১ দিয়ে শুরু হওয়া সঠিক ১১ ডিজিটের নাম্বার দিন
+                  </p>
+                )}
               </div>
 
               <div>

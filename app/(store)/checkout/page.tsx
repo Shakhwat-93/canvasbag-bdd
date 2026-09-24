@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ShoppingBag, Minus, Plus, Trash2, Zap, Phone, AlertCircle, Loader2 } from "lucide-react";
+import { ShoppingBag, Minus, Plus, Trash2, Zap, Phone, AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatBDT, isValidBDPhone } from "@/lib/format";
@@ -68,8 +68,48 @@ export default function CheckoutPage() {
     });
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/\D/g, "");
+
+    // If pasted with 88 or +88 prefix (e.g. 88017... -> 017...)
+    if (raw.startsWith("8801")) {
+      raw = raw.slice(2);
+    }
+
+    // Auto-prepend 0 if user types 1... (e.g. 17... -> 017...)
+    if (raw.startsWith("1") && raw.length <= 10) {
+      raw = "0" + raw;
+    }
+
+    // Strictly enforce starting with 01
+    if (raw.length === 1 && raw !== "0") {
+      raw = "0";
+    }
+    if (raw.length >= 2 && !raw.startsWith("01")) {
+      raw = "01" + raw.replace(/^0+/, "").replace(/^1+/, "");
+    }
+
+    // Never allow more than 11 digits
+    const cleaned = raw.slice(0, 11);
+    setPhone(cleaned);
+
+    if (cleaned.length === 11) {
+      if (/^01[3-9]\d{8}$/.test(cleaned)) {
+        setPhoneError("");
+      } else {
+        setPhoneError("সঠিক বাংলাদেশি মোবাইল অপারেটর নাম্বার দিন (যেমন: 01712345678)");
+      }
+    } else if (cleaned.length > 0) {
+      setPhoneError(`১১ ডিজিটের মোবাইল নাম্বার দিন (বাকি ${11 - cleaned.length} ডিজিট)`);
+    } else {
+      setPhoneError("");
+    }
+  };
+
   const handlePhoneBlur = () => {
-    if (phone && !isValidBDPhone(phone)) {
+    if (!phone) {
+      setPhoneError("মোবাইল নাম্বার আবশ্যক");
+    } else if (!isValidBDPhone(phone)) {
       setPhoneError("মোবাইল নাম্বারটি অবশ্যই ০১ দিয়ে শুরু হওয়া ১১ ডিজিটের নাম্বার হতে হবে (যেমন: 01712345678)।");
     } else {
       setPhoneError("");
@@ -226,31 +266,55 @@ export default function CheckoutPage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <label htmlFor="phone" className="text-xs font-bold text-slate-700">
-                      মোবাইল নাম্বার <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      id="phone"
-                      required
-                      maxLength={11}
-                      value={phone}
-                      onChange={(e) => {
-                        setPhone(e.target.value);
-                        if (phoneError) setPhoneError("");
-                      }}
-                      onBlur={handlePhoneBlur}
-                      placeholder="01XXXXXXXXX"
-                      className={`rounded-xl h-11 px-4 border-2 focus:outline-none text-slate-900 text-sm font-medium bg-white transition-colors ${
-                        phoneError
-                          ? "border-red-500 focus:border-red-500"
-                          : "border-[#e5e7eb] focus:border-[#ff6b35]"
-                      }`}
-                    />
-                    {phoneError && (
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="phone" className="text-xs font-bold text-slate-700">
+                        মোবাইল নাম্বার <span className="text-red-500">*</span>
+                      </label>
+                      <span className={`text-[11px] font-bold ${
+                        phone.length === 11 && isValidBDPhone(phone)
+                          ? "text-emerald-600"
+                          : phone.length > 0
+                          ? "text-amber-600"
+                          : "text-slate-400"
+                      }`}>
+                        {phone.length}/11 ডিজিট {phone.length === 11 && isValidBDPhone(phone) ? "✓" : ""}
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="tel"
+                        id="phone"
+                        required
+                        inputMode="numeric"
+                        autoComplete="tel"
+                        maxLength={11}
+                        value={phone}
+                        onChange={handlePhoneChange}
+                        onBlur={handlePhoneBlur}
+                        placeholder="01XXXXXXXXX (১১ ডিজিট)"
+                        className={`w-full rounded-xl h-11 px-4 pr-10 border-2 focus:outline-none text-slate-900 text-sm font-semibold tracking-wide bg-white transition-colors ${
+                          phoneError
+                            ? "border-red-500 focus:border-red-500"
+                            : phone.length === 11 && isValidBDPhone(phone)
+                            ? "border-emerald-500 focus:border-emerald-500"
+                            : "border-[#e5e7eb] focus:border-[#ff6b35]"
+                        }`}
+                      />
+                      {phone.length === 11 && isValidBDPhone(phone) && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-600 font-bold text-xs flex items-center gap-1 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>সঠিক</span>
+                        </div>
+                      )}
+                    </div>
+                    {phoneError ? (
                       <p className="text-xs text-red-600 flex items-center gap-1 font-semibold mt-1">
-                        <AlertCircle className="w-3.5 h-3.5" />
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                         {phoneError}
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-slate-500">
+                        নাম্বারটি অবশ্যই ০১ দিয়ে শুরু হওয়া ১১ ডিজিট হতে হবে
                       </p>
                     )}
                   </div>

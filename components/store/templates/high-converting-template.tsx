@@ -234,12 +234,60 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
     }
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/\D/g, "");
+
+    // If pasted with 88 or +88 prefix (e.g. 88017... -> 017...)
+    if (raw.startsWith("8801")) {
+      raw = raw.slice(2);
+    }
+
+    // Auto-prepend 0 if user types 1... (e.g. 17... -> 017...)
+    if (raw.startsWith("1") && raw.length <= 10) {
+      raw = "0" + raw;
+    }
+
+    // Strictly enforce starting with 01
+    if (raw.length === 1 && raw !== "0") {
+      raw = "0";
+    }
+    if (raw.length >= 2 && !raw.startsWith("01")) {
+      raw = "01" + raw.replace(/^0+/, "").replace(/^1+/, "");
+    }
+
+    // Never allow more than 11 digits
+    const cleaned = raw.slice(0, 11);
+    setPhone(cleaned);
+
+    if (cleaned.length === 11) {
+      if (/^01[3-9]\d{8}$/.test(cleaned)) {
+        setPhoneError("");
+      } else {
+        setPhoneError("সঠিক বাংলাদেশি মোবাইল অপারেটর নাম্বার দিন (যেমন: 01712345678)");
+      }
+    } else if (cleaned.length > 0) {
+      setPhoneError(`১১ ডিজিটের মোবাইল নাম্বার দিন (বাকি ${11 - cleaned.length} ডিজিট)`);
+    } else {
+      setPhoneError("");
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    if (!phone) {
+      setPhoneError("মোবাইল নাম্বার আবশ্যক");
+    } else if (!isValidBDPhone(phone)) {
+      setPhoneError("মোবাইল নাম্বারটি অবশ্যই ০১ দিয়ে শুরু হওয়া ১১ ডিজিটের নাম্বার হতে হবে (যেমন: 01712345678)");
+    } else {
+      setPhoneError("");
+    }
+  };
+
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isValidBDPhone(phone)) {
-      setPhoneError("সঠিক ১১ ডিজিটের মোবাইল নাম্বার দিন (যেমন: 01712345678)");
-      toast.error("সঠিক মোবাইল নাম্বার দিন");
+      setPhoneError("মোবাইল নাম্বারটি অবশ্যই ০১ দিয়ে শুরু হওয়া ১১ ডিজিটের নাম্বার হতে হবে (যেমন: 01712345678)");
+      toast.error("সঠিক ১১ ডিজিটের মোবাইল নাম্বার দিন");
       return;
     }
     setPhoneError("");
@@ -276,6 +324,8 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
           phone: phone.trim(),
           address: address.trim(),
           shipping_zone: shippingZone,
+          delivery_fee: deliveryFee,
+          free_shipping: isFreeShipping,
           note: fullNote,
           items: cartItems,
           source: `Landing Page: ${page.title || page.slug || page.id}`,
@@ -1236,23 +1286,45 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">মোবাইল নাম্বার *</label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-xs font-bold text-slate-700">মোবাইল নাম্বার *</label>
+                          <span className="text-[11px] font-bold text-slate-400">
+                            {phone.length}/11 ডিজিট
+                          </span>
+                        </div>
                         <input
                           type="tel"
+                          inputMode="numeric"
+                          autoComplete="tel"
+                          maxLength={11}
                           required
                           value={phone}
-                          onChange={(e) => {
-                            setPhone(e.target.value);
-                            if (phoneError) setPhoneError("");
-                          }}
+                          onChange={handlePhoneChange}
+                          onBlur={handlePhoneBlur}
                           placeholder="01XXXXXXXXX"
-                          className={`w-full h-12 px-4 rounded-xl border text-sm font-semibold outline-none transition-all bg-slate-50/50 ${
+                          className={`w-full h-12 px-4 rounded-xl border text-sm font-semibold outline-none transition-all ${
                             phoneError
-                              ? "border-red-500 focus:ring-2 focus:ring-red-100"
-                              : "border-slate-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                              ? "border-red-500 bg-red-50/20 focus:ring-2 focus:ring-red-100"
+                              : phone.length === 11 && isValidBDPhone(phone)
+                              ? "border-emerald-600 bg-emerald-50/30 focus:ring-2 focus:ring-emerald-100"
+                              : "border-slate-200 bg-slate-50/50 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                           }`}
                         />
-                        {phoneError && <p className="text-xs text-red-500 font-semibold mt-1">{phoneError}</p>}
+                        {phoneError ? (
+                          <p className="text-[11px] text-red-600 font-bold flex items-center gap-1 mt-1">
+                            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span>{phoneError}</span>
+                          </p>
+                        ) : phone.length === 11 && isValidBDPhone(phone) ? (
+                          <p className="text-[11px] text-emerald-700 font-bold flex items-center gap-1 mt-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span>সঠিক ১১ ডিজিটের মোবাইল নাম্বার</span>
+                          </p>
+                        ) : (
+                          <p className="text-[10px] text-slate-500 font-medium mt-1">
+                            ০১ দিয়ে শুরু হওয়া ১১ ডিজিটের মোবাইল নাম্বার দিন (যেমন: 01712345678)
+                          </p>
+                        )}
                       </div>
 
                       <div>

@@ -79,10 +79,12 @@ export async function POST(req: NextRequest) {
     // Discount rule: Subtotal >= 3200 gets 250 discount
     const discount = subtotal >= 3200 ? 250 : 0;
 
-    // Free shipping rule: Subtotal >= 2500 gets free shipping
+    // Free shipping rule: Subtotal >= 2500 gets free shipping, or passed explicitly from bundle
     const deliveryFee =
-      subtotal >= 2500 || subtotal === 0
+      body.free_shipping === true || body.delivery_fee === 0 || subtotal >= 2500 || subtotal === 0
         ? 0
+        : typeof body.delivery_fee === "number"
+        ? body.delivery_fee
         : shippingZone === "Inside Dhaka"
         ? shippingInside
         : shippingOutside;
