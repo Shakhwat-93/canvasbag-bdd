@@ -316,8 +316,45 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
     }
   };
 
+  const handleWhatsAppOrder = () => {
+    const rawWa = resolved.whatsapp || "01942212267";
+    const cleanWa = rawWa.replace(/\D/g, "");
+    const targetWa = cleanWa.startsWith("88") ? cleanWa : `88${cleanWa}`;
+
+    const bundleText = selectedBundle
+      ? `${selectedBundle.title} (${formatBDT(selectedBundle.price)})`
+      : `${resolved.name} - ${quantity}টি (${formatBDT(unitPrice * quantity)})`;
+
+    let msg = `আসসালামু আলাইকুম, আমি "${resolved.name}" অর্ডার করতে চাই।\n\n`;
+    msg += `📦 প্যাকেজ: ${bundleText}\n`;
+    if (selectedVariant && selectedVariant.name !== "Standard") {
+      msg += `🎨 ভ্যারিয়েন্ট: ${selectedVariant.name}\n`;
+    }
+    msg += `🚚 ডেলিভারি এলাকা: ${shippingZone === "Inside Dhaka" ? "ঢাকার ভেতরে" : "ঢাকার বাইরে"}\n`;
+    msg += `💰 মোট বিল: ${formatBDT(total)}\n`;
+
+    if (name.trim()) msg += `👤 নাম: ${name.trim()}\n`;
+    if (phone.trim()) msg += `📱 মোবাইল: ${phone.trim()}\n`;
+    if (address.trim()) msg += `📍 ঠিকানা: ${address.trim()}\n`;
+    if (note.trim()) msg += `📝 বিশেষ নির্দেশনা: ${note.trim()}\n`;
+
+    try {
+      trackClientEvent("contact", {
+        method: "whatsapp",
+        value: total,
+        currency: "BDT",
+      });
+    } catch (e) {
+      console.warn("Analytics error", e);
+    }
+
+    const waUrl = `https://wa.me/${targetWa}?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, "_blank");
+  };
+
   // Section visibility check
   const isSectionEnabled = (type: string): boolean => {
+    if (type === "footer") return false; // Landing pages have no footer
     if (!page.sections || page.sections.length === 0) return true;
     const sec = page.sections.find((s) => s.type === type);
     return sec ? sec.enabled : true;
@@ -1266,24 +1303,37 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
                         </span>
                       </div>
 
-                      {/* Big Order Confirmation Button */}
-                      <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full bg-[#0b6b38] hover:bg-[#08522b] text-white font-black text-base py-4 rounded-xl shadow-xl shadow-emerald-900/20 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98 disabled:opacity-50"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            <span>অর্ডার প্রসেস হচ্ছে...</span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="w-5 h-5" />
-                            <span>অর্ডার কনফার্ম করুন</span>
-                          </>
-                        )}
-                      </button>
+                      {/* Big Order Confirmation Buttons */}
+                      <div className="space-y-2.5 pt-2">
+                        {/* Primary Web COD Button */}
+                        <button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="w-full bg-[#0b6b38] hover:bg-[#08522b] text-white font-black text-sm sm:text-base py-3.5 sm:py-4 rounded-xl shadow-xl shadow-emerald-900/20 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98 disabled:opacity-50"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                              <span>অর্ডার প্রসেস হচ্ছে...</span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="w-5 h-5" />
+                              <span>অর্ডার কনফার্ম করুন (ক্যাশ অন ডেলিভারি)</span>
+                            </>
+                          )}
+                        </button>
+
+                        {/* WhatsApp Order Button */}
+                        <button
+                          type="button"
+                          onClick={handleWhatsAppOrder}
+                          className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-sm sm:text-base py-3.5 sm:py-4 rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2.5 cursor-pointer transition-all active:scale-98"
+                        >
+                          <MessageCircle className="w-5 h-5 fill-white" />
+                          <span>হোয়াটসঅ্যাপে অর্ডার করতে চাই</span>
+                        </button>
+                      </div>
 
                       {/* Security Trust Note Under Button */}
                       <p className="text-center text-[11px] text-slate-500 font-semibold flex items-center justify-center gap-1.5 pt-1">
@@ -1297,152 +1347,6 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
             </div>
           </div>
         </section>
-      )}
-
-      {/* 15. FOOTER (Exact brand match with main website) */}
-      {isSectionEnabled("footer") && (
-        <footer className="bg-slate-900 text-slate-300 text-xs py-12 px-4 sm:px-6 border-t border-slate-800">
-          <div className="max-w-6xl mx-auto space-y-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {/* Col 1: Brand & Story */}
-              <div className="space-y-4">
-                <Link href="/" className="inline-flex items-center gap-2.5 group">
-                  <Image
-                    src={resolved.logoUrl || "/brand/logo.webp"}
-                    alt="CanvasBag Logo"
-                    width={40}
-                    height={40}
-                    className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
-                    unoptimized
-                  />
-                  <span className="text-2xl font-black tracking-tight text-white group-hover:text-[#ff6b35] transition-colors">
-                    Canvas<span className="text-[#ff6b35]">Bag</span>
-                  </span>
-                </Link>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {resolved.brandTagline || "বাংলাদেশের বিশ্বস্ত ক্যানভাস ব্যাগ শপ। সেরা মানের পণ্য, সর্বোত্তম দাম এবং দ্রুততম ক্যাশ অন ডেলিভারি।"}
-                </p>
-                {resolved.facebookUrl && (
-                  <div className="flex items-center gap-2 pt-1">
-                    <a
-                      href={resolved.facebookUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-9 h-9 rounded-xl bg-[#1877F2] text-white flex items-center justify-center hover:opacity-90 transition-opacity shadow-sm"
-                      title="Follow on Facebook"
-                    >
-                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
-                        <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
-                      </svg>
-                    </a>
-                    {resolved.messengerUrl && (
-                      <a
-                        href={resolved.messengerUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-9 h-9 rounded-xl bg-[#0084FF] text-white flex items-center justify-center hover:opacity-90 transition-opacity shadow-sm"
-                        title="Chat on Messenger"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Col 2: Direct Contact Details */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-black text-white tracking-wider uppercase">Contact Details</h4>
-                <ul className="space-y-2.5 text-xs text-slate-400">
-                  <li className="flex items-start gap-2.5">
-                    <Phone className="w-4 h-4 text-[#ff6b35] mt-0.5 flex-shrink-0" />
-                    <div>
-                      <a href={`tel:${resolved.phone}`} className="font-bold text-white hover:text-[#ff6b35] transition-colors">
-                        {resolved.phone.startsWith("+88") ? resolved.phone : `+88${resolved.phone.startsWith("0") ? resolved.phone : "0" + resolved.phone}`}
-                      </a>
-                      <p className="text-[11px] text-slate-500">{resolved.hours || "সকাল ১০টা — রাত ৯টা"}</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <MessageCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <a
-                        href={`https://wa.me/88${resolved.whatsapp.replace(/\D/g, "")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-bold text-white hover:text-emerald-400 transition-colors"
-                      >
-                        WhatsApp: {resolved.whatsapp}
-                      </a>
-                      <p className="text-[11px] text-slate-500">২৪/৭ সরাসরি চ্যাট ও অর্ডার</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <Mail className="w-4 h-4 text-[#ff6b35] mt-0.5 flex-shrink-0" />
-                    <a href={`mailto:${resolved.email}`} className="hover:text-[#ff6b35] transition-colors font-medium">
-                      {resolved.email}
-                    </a>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <MapPin className="w-4 h-4 text-[#ff6b35] mt-0.5 flex-shrink-0" />
-                    <span>{resolved.address}</span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Col 3: Customer Service & Guarantees */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-black text-white tracking-wider uppercase">Our Guarantees</h4>
-                <ul className="space-y-2 text-xs text-slate-400">
-                  <li className="flex items-center gap-2">
-                    <Truck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                    <span>সারাদেশে দ্রুত ক্যাশ অন ডেলিভারি</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Package className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                    <span>পার্সেল খুলে দেখে মূল্য পরিশোধ</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <RotateCcw className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                    <span>৭ দিনের সহজ রিপ্লেসমেন্ট গ্যারান্টি</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                    <span>১০০% অরিজিনাল ও প্রিমিয়াম কোয়ালিটি</span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Col 4: Payment Methods */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-black text-white tracking-wider uppercase">Payment Methods</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  ডেলিভারি ম্যানের উপস্থিতিতে পণ্য দেখে নিচের যেকোনো মাধ্যমে মূল্য পরিশোধ করুন:
-                </p>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <span className="text-[11px] bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-md text-slate-200 font-bold">
-                    💳 bKash
-                  </span>
-                  <span className="text-[11px] bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-md text-slate-200 font-bold">
-                    💚 Nagad
-                  </span>
-                  <span className="text-[11px] bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-md text-slate-200 font-bold">
-                    💜 Rocket
-                  </span>
-                  <span className="text-[11px] bg-emerald-950/80 border border-emerald-700/60 px-2.5 py-1 rounded-md text-emerald-300 font-bold">
-                    💵 ক্যাশ অন ডেলিভারি
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Strip */}
-            <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500 text-[11px]">
-              <p>© {new Date().getFullYear()} CanvasBag Bangladesh. All rights reserved.</p>
-              <p>{resolved.shippingNotice}</p>
-            </div>
-          </div>
-        </footer>
       )}
 
       {/* 16. STICKY BOTTOM MOBILE ORDER BAR */}
