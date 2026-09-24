@@ -427,18 +427,29 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
 
                   {/* Problem-Solution Bullet Points */}
                   <div className="space-y-2 py-1">
-                    <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                      <span>১০০% প্রিমিয়াম ওয়াটারপ্রুফ কটন ক্যানভাস ফেব্রিক</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                      <span>১৫.৬ ইঞ্চি ল্যাপটপ ও গ্যাজেটের পৃথক সেফটি স্লট</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                      <span>এর্গোনমিক প্যাডেড শোল্ডার স্ট্র্যাপ — কাঁধে ব্যথামুক্ত ব্যবহার</span>
-                    </div>
+                    {resolved.heroBullets && resolved.heroBullets.length > 0 ? (
+                      resolved.heroBullets.map((bullet, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                          <span>{bullet}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                          <span>১০০% প্রিমিয়াম ও টেকসই ম্যাটেরিয়াল</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                          <span>ক্যাশ অন ডেলিভারি — হাতে পেয়ে চেক করে পেমেন্ট</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                          <span>দ্রুততম সময়ে সারা দেশে হোম ডেলিভারি নিশ্চয়তা</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -470,7 +481,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
                 {/* Guarantee Trust Chip */}
                 <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2 flex items-center gap-2 text-emerald-800 text-xs font-bold">
                   <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span>১০০% অরিজিনাল ক্যানভাস — পছন্দ না হলে সাথে সাথে রিটার্ন করতে পারবেন</span>
+                  <span>{resolved.returnPolicyNotice || "১০০% প্রিমিয়াম ও আসল পণ্য — পছন্দ না হলে সাথে সাথে রিটার্ন করতে পারবেন"}</span>
                 </div>
 
                 {/* Big Direct Call to Action Button */}
@@ -725,10 +736,10 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
           <div className="max-w-6xl mx-auto space-y-8">
             <div className="text-center max-w-xl mx-auto space-y-2">
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-                এই ব্যাগটি নিয়মিত ব্যবহারে আপনি যা পাবেন:
+                {resolved.benefitsTitle || "এই প্রডাক্টটি নিয়মিত ব্যবহারে আপনি যা পাবেন:"}
               </h2>
               <p className="text-xs text-slate-500 font-semibold">
-                আধুনিক টেকসই ফ্যাব্রিক ও এর্গোনমিক সুবিধার এক অপূর্ব সমন্বয়
+                {resolved.benefitsSubtitle || "ব্যথা মুক্ত জীবন ও স্বাভাবিক চলাফেরার জন্য চমৎকার শারীরিক কার্যকারিতা"}
               </p>
             </div>
 
@@ -758,10 +769,10 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
           <div className="max-w-6xl mx-auto space-y-8">
             <div className="text-center max-w-xl mx-auto space-y-2">
               <h2 className="text-2xl sm:text-3xl font-black text-emerald-900">
-                এটি বিশেষভাবে যাদের জন্য উপযোগী:
+                {resolved.targetAudienceTitle || "এটি বিশেষভাবে যাদের জন্য উপযোগী:"}
               </h2>
               <p className="text-xs text-slate-600 font-semibold">
-                যেকোনো পেশা ও বয়সের মানুষের জন্য তৈরি বহুমুখী স্মার্ট ব্যাগ
+                {resolved.targetAudienceSubtitle || "আমাদের এই প্রডাক্টটি ডিজাইন করা হয়েছে বিভিন্ন ধরণের সমস্যা সমাধানের জন্য"}
               </p>
             </div>
 
@@ -860,8 +871,8 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
         <section className="py-10 px-4 sm:px-6">
           <div className="max-w-4xl mx-auto space-y-6">
             <div className="text-center space-y-1">
-              <h2 className="text-2xl sm:text-3xl font-black text-slate-900">স্পেসিফিকেশন ও বিবরণ</h2>
-              <p className="text-xs text-slate-500 font-semibold">ব্যাগের প্রতিটি উপাদান ও পরিমাপের তালিকা</p>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900">{resolved.specsTitle || "স্পেসিফিকেশন ও বিবরণ"}</h2>
+              <p className="text-xs text-slate-500 font-semibold">{resolved.specsSubtitle || "প্রডাক্টের প্রতিটি উপাদান ও পরিমাপের তালিকা"}</p>
             </div>
 
             <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">

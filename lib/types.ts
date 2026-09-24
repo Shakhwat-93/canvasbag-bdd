@@ -233,6 +233,14 @@ export type LandingPageProductOverride = {
   cta_text?: string;
   cta_subtext?: string;
   shipping_notice?: string;
+  hero_bullets?: string[];
+  return_policy_notice?: string;
+  benefits_title?: string;
+  benefits_subtitle?: string;
+  target_audience_title?: string;
+  target_audience_subtitle?: string;
+  specs_title?: string;
+  specs_subtitle?: string;
   phone?: string;
   whatsapp?: string;
 };

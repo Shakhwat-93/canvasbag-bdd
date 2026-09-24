@@ -612,6 +612,14 @@ export function resolveLandingPageProductData(
     ctaText: override.cta_text || "সরাসরি অর্ডার করতে এখানে ক্লিক করুন",
     ctaSubtext: override.cta_subtext || "ক্যাশ অন ডেলিভারি • দেখে মূল্য পরিশোধ",
     shippingNotice: override.shipping_notice || "হোম ডেলিভারি সারাদেশে। কোনো অগ্রিম পেমেন্ট ছাড়া পণ্য দেখে টাকা দিন।",
+    heroBullets: override.hero_bullets || [],
+    returnPolicyNotice: override.return_policy_notice || "",
+    benefitsTitle: override.benefits_title || "",
+    benefitsSubtitle: override.benefits_subtitle || "",
+    targetAudienceTitle: override.target_audience_title || "",
+    targetAudienceSubtitle: override.target_audience_subtitle || "",
+    specsTitle: override.specs_title || "",
+    specsSubtitle: override.specs_subtitle || "",
 
     // Brand Contact Details & Identity (Exact match with main website)
     brandName: CANVASBAG_BRAND.name,
