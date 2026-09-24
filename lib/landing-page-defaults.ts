@@ -385,7 +385,7 @@ export function resolveLandingPageProductData(
     override.db_product_name?.trim() ||
     landingPage.db_product_name?.trim() ||
     baseProduct?.db_product_name?.trim() ||
-    (landingPage.slug?.includes("flexpro") || landingPage.id?.includes("flexpro") ? "Leg strech" : "");
+    (landingPage.slug?.includes("flexpro") || landingPage.id?.includes("flexpro") ? "Professional Yoga Stretch Band" : "");
   const headline = override.headline || name;
   const subheadline = override.subheadline || baseProduct?.shortDescription || "";
   const price = override.price ?? baseProduct?.price ?? 0;

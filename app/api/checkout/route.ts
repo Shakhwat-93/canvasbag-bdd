@@ -69,11 +69,16 @@ export async function POST(req: NextRequest) {
     // Calculate totals
     let subtotal = 0;
     let totalQuantity = 0;
-    for (const item of items) {
-      const price = Number(item.price) || 0;
-      const qty = Number(item.quantity) || 1;
-      subtotal += price * qty;
-      totalQuantity += qty;
+    if (typeof body.subtotal === "number" && body.subtotal > 0) {
+      subtotal = body.subtotal;
+      totalQuantity = items.reduce((sum, it) => sum + (Number(it.quantity) || 1), 0);
+    } else {
+      for (const item of items) {
+        const price = Number(item.price) || 0;
+        const qty = Number(item.quantity) || 1;
+        subtotal += price * qty;
+        totalQuantity += qty;
+      }
     }
 
     // Discount rule: Subtotal >= 3200 gets 250 discount
@@ -121,7 +126,8 @@ export async function POST(req: NextRequest) {
         return body.db_product_name.trim();
       }
       if (body.lp_slug && (body.lp_slug.includes("flexpro") || body.lp_slug.includes("strap"))) {
-        return "Leg strech";
+        const qty = Number(item.quantity) || 1;
+        return qty > 1 ? `Professional Yoga Stretch Band - ${qty} Pcs Combo` : "Professional Yoga Stretch Band";
       }
       if (item.productId && dbNameMap.has(item.productId)) {
         return dbNameMap.get(item.productId)!;

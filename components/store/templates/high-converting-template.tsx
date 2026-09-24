@@ -302,12 +302,18 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
     const bundleNote = selectedBundle ? `[প্যাকেজ: ${selectedBundle.title}]` : "";
     const fullNote = [bundleNote, note.trim()].filter(Boolean).join(" - ");
 
-    // Clean short name for Database Orders & Invoices (e.g. "Leg strech")
-    const cleanDbName =
+    // Clean short name for Database Orders & Invoices (e.g. "Professional Yoga Stretch Band - 2 Pcs Combo")
+    const rawBaseName =
       resolved.db_product_name ||
       (page.slug?.includes("flexpro") || page.id?.includes("flexpro")
-        ? "Leg strech"
+        ? "Professional Yoga Stretch Band"
         : resolved.name.split(/[—–\-|]/)[0]?.trim() || resolved.name);
+
+    const bundleQty = selectedBundle?.quantity || quantity || 1;
+    let cleanDbName = rawBaseName.trim();
+    if (bundleQty > 1 && !/(combo|pcs|piece|টি)/i.test(cleanDbName)) {
+      cleanDbName = `${cleanDbName} - ${bundleQty} Pcs Combo`;
+    }
 
     const cartItems = [
       {
@@ -319,7 +325,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
         variantId: selectedVariant?.id || "standard",
         variantName: selectedVariant?.name || "Standard",
         image: activeImage || resolved.primaryImage,
-        quantity: 1, // Full bundle treated as single line item or total price
+        quantity: bundleQty, // Pass bundle quantity (e.g. 2 so 2x badge shows)
       },
     ];
 
@@ -332,6 +338,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
           phone: phone.trim(),
           address: address.trim(),
           shipping_zone: shippingZone,
+          subtotal: bundleEffectivePrice,
           delivery_fee: deliveryFee,
           free_shipping: isFreeShipping,
           db_product_name: cleanDbName,

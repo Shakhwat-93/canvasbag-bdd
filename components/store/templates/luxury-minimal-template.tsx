@@ -162,12 +162,17 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
     }
 
     setIsSubmitting(true);
-    // Clean short name for Database Orders & Invoices (e.g. "Leg strech")
-    const cleanDbName =
+    // Clean short name for Database Orders & Invoices (e.g. "Professional Yoga Stretch Band - 2 Pcs Combo")
+    const rawBaseName =
       resolved.db_product_name ||
       (page.slug?.includes("flexpro") || page.id?.includes("flexpro")
-        ? "Leg strech"
+        ? "Professional Yoga Stretch Band"
         : resolved.name.split(/[—–\-|]/)[0]?.trim() || resolved.name);
+
+    let cleanDbName = rawBaseName.trim();
+    if (quantity > 1 && !/(combo|pcs|piece|টি)/i.test(cleanDbName)) {
+      cleanDbName = `${cleanDbName} - ${quantity} Pcs Combo`;
+    }
 
     const cartItems = [
       {
@@ -175,7 +180,7 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
         slug: resolved.baseProduct?.slug || page.slug || page.id,
         name: cleanDbName,
         db_product_name: cleanDbName,
-        price: unitPrice,
+        price: unitPrice * quantity,
         variantId: selectedVariant?.id || "standard",
         variantName: selectedVariant?.name || "Standard",
         image: activeImage || resolved.primaryImage,
@@ -192,6 +197,7 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
           phone: phone.trim(),
           address: address.trim(),
           shipping_zone: shippingZone,
+          subtotal: unitPrice * quantity,
           delivery_fee: deliveryFee,
           db_product_name: cleanDbName,
           note: note.trim(),
