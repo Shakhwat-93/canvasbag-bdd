@@ -461,7 +461,7 @@ export async function getLandingPages(opts?: CatalogQueryOptions): Promise<Landi
         : { next: { revalidate: 30, tags: ["cb-landing-pages"] } }),
     };
 
-    const res = await fetch(`${CATALOG_URL}/rest/v1/cb_landing_pages?select=*`, fetchOptions);
+    const res = await fetch(`${CATALOG_URL}/rest/v1/cb_landing_pages?select=*&order=created_at.desc&limit=500`, fetchOptions);
     if (res.ok) {
       const rows = await res.json();
       if (Array.isArray(rows)) {

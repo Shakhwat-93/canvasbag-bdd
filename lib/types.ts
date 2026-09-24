@@ -152,22 +152,123 @@ export type SiteSettings = {
   category_product_orders?: Record<string, string[]>;
 };
 
+export type LandingPageStatus = "published" | "draft";
+
+export type LandingPageTemplateId = "high_converting" | "modern_luxury" | "editorial_story";
+
+export type LandingPageSectionType =
+  | "top_marquee"
+  | "navbar"
+  | "hero"
+  | "urgency_timer"
+  | "pain_points"
+  | "solution_spotlight"
+  | "trust_strip"
+  | "benefits"
+  | "target_audience"
+  | "features"
+  | "story"
+  | "gallery"
+  | "specs"
+  | "urgent_notice"
+  | "reviews"
+  | "faq"
+  | "order_form"
+  | "footer";
+
+export type LandingPageSectionConfig = {
+  id: string;
+  type: LandingPageSectionType;
+  enabled: boolean;
+  title?: string;
+  subtitle?: string;
+  data?: Record<string, any>;
+};
+
 export type LandingPageComponent = {
   type: "hero" | "product_showcase" | "benefits" | "reviews" | "faq" | "checkout";
   settings: Record<string, any>;
+};
+
+export type LandingPageProductOverride = {
+  name?: string;
+  headline?: string;
+  subheadline?: string;
+  hook_headline?: string;
+  quote_highlight?: string;
+  badge?: string;
+  price?: number;
+  compare_at_price?: number | null;
+  hero_image?: string;
+  dimensions_image?: string;
+  gallery_images?: string[];
+  description?: string;
+  story?: string;
+  variants?: { id: string; name: string; price?: number; image?: string; in_stock?: boolean }[];
+  bundles?: {
+    id: string;
+    title: string;
+    subtitle?: string;
+    quantity: number;
+    price: number;
+    compare_at_price?: number;
+    is_popular?: boolean;
+    free_delivery?: boolean;
+  }[];
+  pain_points?: { title: string; description?: string }[];
+  target_audience?: { title: string; description?: string; icon?: string }[];
+  solution_title?: string;
+  solution_description?: string;
+  solution_points?: string[];
+  urgent_notice?: { title?: string; message?: string; button_text?: string };
+  countdown_minutes?: number;
+  stock_left?: number;
+  benefits?: { title: string; description: string; icon?: string }[];
+  features?: { title: string; description: string; image?: string }[];
+  specs?: { key: string; value: string }[];
+  reviews?: { author: string; rating: number; text: string; date?: string; verified?: boolean }[];
+  faqs?: { question: string; answer: string }[];
+  marquee_text?: string;
+  urgency_text?: string;
+  cta_text?: string;
+  cta_subtext?: string;
+  shipping_notice?: string;
+  phone?: string;
+  whatsapp?: string;
 };
 
 export type LandingPage = {
   id: string; // Slug
   slug?: string;
   title: string;
+  status?: LandingPageStatus;
+  product_id?: string;
+  template?: LandingPageTemplateId | string;
   custom_domain?: string | null;
+  subdomain?: string | null;
+
+  // SEO & OpenGraph
+  meta_title?: string;
+  meta_description?: string;
+  og_image?: string;
+  canonical_url?: string;
+
+  // Analytics & Pixel IDs
   gtm_id?: string | null;
   ga4_id?: string | null;
   pixel_id?: string | null;
-  template?: string;
-  custom_css?: string | null;
+
+  // Full product overrides & content
+  product_override?: LandingPageProductOverride;
+
+  // Section list and ordering
+  sections?: LandingPageSectionConfig[];
+
+  // Legacy / fallback components
   components?: LandingPageComponent[];
+  custom_css?: string | null;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type LocalOrder = {

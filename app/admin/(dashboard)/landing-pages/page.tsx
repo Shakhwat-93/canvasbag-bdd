@@ -1,6 +1,8 @@
 import React from "react";
 import { getLandingPages, getCatalogProducts } from "@/lib/supabase";
+import { getAllLocalOrders } from "@/lib/db";
 import { LandingPagesManager } from "@/components/admin/landing-pages-manager";
+import type { LocalOrder } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -15,5 +17,18 @@ export default async function AdminLandingPagesPage() {
     getCatalogProducts({ forceFresh: true }),
   ]);
 
-  return <LandingPagesManager initialLandingPages={landingPages} initialProducts={products} />;
+  let orders: LocalOrder[] = [];
+  try {
+    orders = getAllLocalOrders();
+  } catch (e) {
+    console.warn("[Admin Landing Pages] Could not load orders for analytics:", e);
+  }
+
+  return (
+    <LandingPagesManager
+      initialLandingPages={landingPages}
+      initialProducts={products}
+      initialOrders={orders}
+    />
+  );
 }

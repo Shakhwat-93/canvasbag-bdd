@@ -83,7 +83,7 @@ export function AdminSidebar({
           isActive: (path) => path.startsWith("/admin/categories"),
         },
         {
-          label: "Collections",
+          label: "Landing Pages",
           href: "/admin/landing-pages",
           icon: Layers,
           isActive: (path) => path.startsWith("/admin/landing-pages"),

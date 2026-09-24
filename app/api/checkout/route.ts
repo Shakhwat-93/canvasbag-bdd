@@ -147,6 +147,8 @@ export async function POST(req: NextRequest) {
       };
     });
 
+    const orderSource = body.source ? String(body.source).trim() : (body.lp_slug ? `Landing Page: ${body.lp_slug}` : "main website");
+
     const supabaseOrderData = {
       id: orderId,
       customer_name: name.trim(),
@@ -154,7 +156,7 @@ export async function POST(req: NextRequest) {
       address: address.trim(),
       product_name: primaryProductName,
       quantity: items.length,
-      source: "main website",
+      source: orderSource,
       status: "New",
       amount: total,
       items: totalQuantity,
@@ -190,6 +192,8 @@ export async function POST(req: NextRequest) {
       attribution: {
         traffic_source: trafficSource,
         ip_address: ip,
+        source: orderSource,
+        lp_slug: body.lp_slug || null,
       },
       created_at: createdAt,
     };

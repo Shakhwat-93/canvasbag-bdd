@@ -74,7 +74,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <style id="theme-variables" dangerouslySetInnerHTML={{ __html: themeCss }} />
 
         {/* Theme Engine Runtime Script for Live Admin Previews */}
-        <script
+        <Script
+          id="theme-engine-runtime"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
@@ -119,7 +121,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
 
         {/* Synchronous Base Analytics & Meta Pixel Initialization with Single-Source Protection */}
-        <script
+        <Script
+          id="meta-pixel-base-init"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
