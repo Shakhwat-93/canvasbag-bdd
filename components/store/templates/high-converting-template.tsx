@@ -315,15 +315,18 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
       cleanDbName = `${cleanDbName} - ${bundleQty} Pcs Combo`;
     }
 
+    // Unit price so that (unitItemPrice * bundleQty) === bundleEffectivePrice (e.g. 999 / 2 = 499.5, so 2 * 499.5 = 999)
+    const unitItemPrice = bundleQty > 1 ? Number((bundleEffectivePrice / bundleQty).toFixed(2)) : bundleEffectivePrice;
+
     const cartItems = [
       {
         productId: page.product_id || page.slug || page.id,
         slug: resolved.baseProduct?.slug || page.slug || page.id,
         name: cleanDbName,
         db_product_name: cleanDbName,
-        price: bundleEffectivePrice,
+        price: unitItemPrice,
         variantId: selectedVariant?.id || "standard",
-        variantName: selectedVariant?.name || "Standard",
+        variantName: "Standard",
         image: activeImage || resolved.primaryImage,
         quantity: bundleQty, // Pass bundle quantity (e.g. 2 so 2x badge shows)
       },

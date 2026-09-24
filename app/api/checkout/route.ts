@@ -148,7 +148,8 @@ export async function POST(req: NextRequest) {
 
     const firstItem = items[0];
     const firstDbName = firstItem ? resolveDbProductName(firstItem) : "CanvasBag Carry";
-    const firstVariant = firstItem?.variantName && firstItem.variantName !== "Standard" ? ` - ${firstItem.variantName}` : "";
+    const isLp = Boolean(body.lp_slug) || Boolean(body.db_product_name) || firstDbName.includes("Combo");
+    const firstVariant = !isLp && firstItem?.variantName && firstItem.variantName !== "Standard" ? ` - ${firstItem.variantName}` : "";
     const primaryProductName = `${firstDbName}${firstVariant}`;
 
     // Attribution data
@@ -158,11 +159,21 @@ export async function POST(req: NextRequest) {
     // 1. Write to Remote Supabase Orders DB
     const orderedItems = items.map((item) => {
       const dbName = resolveDbProductName(item);
-      const vName = item.variantName && item.variantName !== "Standard" ? ` - ${item.variantName}` : "";
+      const isCleanName = Boolean(body.lp_slug) || Boolean(body.db_product_name) || dbName.includes("Combo");
+      const vName = !isCleanName && item.variantName && item.variantName !== "Standard" ? ` - ${item.variantName}` : "";
+
+      const qty = Number(item.quantity || 1);
+      let itemPrice = Number(item.price) || 0;
+
+      // Ensure itemPrice is the unit price so that qty * itemPrice equals line total in OMS (preventing 1,998)
+      if (qty > 1 && itemPrice * qty > subtotal && itemPrice === subtotal) {
+        itemPrice = Number((subtotal / qty).toFixed(2));
+      }
+
       return {
         name: `${dbName}${vName}`,
-        price: Number(item.price),
-        quantity: Number(item.quantity || 1),
+        price: itemPrice,
+        quantity: qty,
       };
     });
 
@@ -218,10 +229,18 @@ export async function POST(req: NextRequest) {
     };
 
     // Use resolved db product names for local items record
-    const localDbItems = items.map((item) => ({
-      ...item,
-      name: resolveDbProductName(item),
-    }));
+    const localDbItems = items.map((item) => {
+      const qty = Number(item.quantity || 1);
+      let itemPrice = Number(item.price) || 0;
+      if (qty > 1 && itemPrice * qty > subtotal && itemPrice === subtotal) {
+        itemPrice = Number((subtotal / qty).toFixed(2));
+      }
+      return {
+        ...item,
+        price: itemPrice,
+        name: resolveDbProductName(item),
+      };
+    });
 
     const localInserted = insertLocalOrder(localOrder, localDbItems);
     if (!localInserted) {
