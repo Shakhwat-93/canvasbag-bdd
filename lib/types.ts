@@ -192,6 +192,7 @@ export type LandingPageComponent = {
 
 export type LandingPageProductOverride = {
   name?: string;
+  db_product_name?: string;
   headline?: string;
   subheadline?: string;
   hook_headline?: string;
@@ -249,6 +250,7 @@ export type LandingPage = {
   id: string; // Slug
   slug?: string;
   title: string;
+  db_product_name?: string;
   status?: LandingPageStatus;
   product_id?: string;
   template?: LandingPageTemplateId | string;

@@ -114,8 +114,14 @@ export async function POST(req: NextRequest) {
     }
 
     const resolveDbProductName = (item: CartItem): string => {
-      if (item.db_product_name && item.db_product_name.trim()) {
+      if (item.db_product_name && typeof item.db_product_name === "string" && item.db_product_name.trim()) {
         return item.db_product_name.trim();
+      }
+      if (body.db_product_name && typeof body.db_product_name === "string" && body.db_product_name.trim()) {
+        return body.db_product_name.trim();
+      }
+      if (body.lp_slug && (body.lp_slug.includes("flexpro") || body.lp_slug.includes("strap"))) {
+        return "Leg strech";
       }
       if (item.productId && dbNameMap.has(item.productId)) {
         return dbNameMap.get(item.productId)!;
@@ -125,6 +131,11 @@ export async function POST(req: NextRequest) {
       }
       if (item.name && dbNameMap.has(item.name.trim().toLowerCase())) {
         return dbNameMap.get(item.name.trim().toLowerCase())!;
+      }
+      // Clean long names if they have promotional taglines
+      if (item.name && item.name.length > 25) {
+        const shortClean = item.name.split(/[—–\-|]/)[0]?.trim();
+        if (shortClean && shortClean.length >= 2) return shortClean;
       }
       return item.name;
     };

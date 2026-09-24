@@ -589,6 +589,33 @@ export function LandingPageEditor({
                 />
               </div>
 
+              {/* Database / Order Short Product Name (for orders, in-database records, and courier parcels) */}
+              <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80 space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-1">
+                  <label className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-amber-600" />
+                    Database / Order Product Name (অর্ডার ও ডাটাবেসের শর্ট নাম)
+                  </label>
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200">
+                    Orders, DB & Invoices
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={override.db_product_name || formData.db_product_name || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    updateOverride({ db_product_name: val });
+                    setFormData((prev) => ({ ...prev, db_product_name: val }));
+                  }}
+                  placeholder="e.g. Leg strech"
+                  className="w-full h-11 px-3.5 rounded-xl border border-amber-300 bg-white text-xs font-bold text-slate-900 outline-none focus:border-amber-600 transition-colors"
+                />
+                <p className="text-[11px] text-slate-600 font-medium">
+                  কাস্টমার এই ল্যান্ডিং পেজ থেকে অর্ডার করলে ডাটাবেস ও অ্যাডমিন প্যানেলে এই ছোট নামটি যাবে (যেমন: <strong>Leg strech</strong>, <strong>Yoga Strap</strong>)।
+                </p>
+              </div>
+
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
                   Subheadline / Hook

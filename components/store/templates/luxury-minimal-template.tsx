@@ -162,11 +162,19 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
     }
 
     setIsSubmitting(true);
+    // Clean short name for Database Orders & Invoices (e.g. "Leg strech")
+    const cleanDbName =
+      resolved.db_product_name ||
+      (page.slug?.includes("flexpro") || page.id?.includes("flexpro")
+        ? "Leg strech"
+        : resolved.name.split(/[—–\-|]/)[0]?.trim() || resolved.name);
+
     const cartItems = [
       {
         productId: page.product_id || page.slug || page.id,
         slug: resolved.baseProduct?.slug || page.slug || page.id,
-        name: resolved.name,
+        name: cleanDbName,
+        db_product_name: cleanDbName,
         price: unitPrice,
         variantId: selectedVariant?.id || "standard",
         variantName: selectedVariant?.name || "Standard",
@@ -185,6 +193,7 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
           address: address.trim(),
           shipping_zone: shippingZone,
           delivery_fee: deliveryFee,
+          db_product_name: cleanDbName,
           note: note.trim(),
           items: cartItems,
           source: `Landing Page: ${page.title || page.slug || page.id}`,

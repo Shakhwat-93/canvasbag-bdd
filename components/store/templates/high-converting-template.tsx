@@ -302,11 +302,19 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
     const bundleNote = selectedBundle ? `[প্যাকেজ: ${selectedBundle.title}]` : "";
     const fullNote = [bundleNote, note.trim()].filter(Boolean).join(" - ");
 
+    // Clean short name for Database Orders & Invoices (e.g. "Leg strech")
+    const cleanDbName =
+      resolved.db_product_name ||
+      (page.slug?.includes("flexpro") || page.id?.includes("flexpro")
+        ? "Leg strech"
+        : resolved.name.split(/[—–\-|]/)[0]?.trim() || resolved.name);
+
     const cartItems = [
       {
         productId: page.product_id || page.slug || page.id,
         slug: resolved.baseProduct?.slug || page.slug || page.id,
-        name: selectedBundle ? `${resolved.name} - ${selectedBundle.title}` : resolved.name,
+        name: cleanDbName,
+        db_product_name: cleanDbName,
         price: bundleEffectivePrice,
         variantId: selectedVariant?.id || "standard",
         variantName: selectedVariant?.name || "Standard",
@@ -326,6 +334,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
           shipping_zone: shippingZone,
           delivery_fee: deliveryFee,
           free_shipping: isFreeShipping,
+          db_product_name: cleanDbName,
           note: fullNote,
           items: cartItems,
           source: `Landing Page: ${page.title || page.slug || page.id}`,
