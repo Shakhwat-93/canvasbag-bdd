@@ -54,7 +54,7 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
     if (selectedVariant?.image) {
       setActiveImage(selectedVariant.image);
     }
-  }, [selectedVariant]);
+  }, [selectedVariantId]);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");

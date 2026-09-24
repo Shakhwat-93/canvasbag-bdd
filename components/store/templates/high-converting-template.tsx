@@ -69,7 +69,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
     if (selectedVariant?.image) {
       setActiveImage(selectedVariant.image);
     }
-  }, [selectedVariant]);
+  }, [selectedVariantId]);
 
   // Bundle Selection
   const [selectedBundleId, setSelectedBundleId] = useState<string>(
@@ -368,8 +368,8 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
           <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap text-[11px] sm:text-xs">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="bg-amber-400 text-slate-950 font-black px-2.5 py-0.5 rounded-full text-[10px] tracking-wide inline-flex items-center gap-1 shadow-xs">
-                <Truck className="w-3 h-3" />
-                <span>সারাদেশে হোম ডেলিভারি ফ্রি</span>
+                <Flame className="w-3 h-3 text-red-600 fill-current" />
+                <span>বিশেষ ধামাকা অফার</span>
               </span>
               <span className="text-emerald-100 hidden sm:inline">
                 {resolved.marqueeText}
@@ -701,6 +701,18 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
                 </div>
               ))}
             </div>
+
+            {/* CTA Order Button in Pain Points */}
+            <div className="text-center pt-3">
+              <button
+                type="button"
+                onClick={scrollToOrderForm}
+                className="inline-flex items-center gap-2.5 bg-[#0b6b38] hover:bg-[#08522b] text-white font-black text-sm sm:text-base py-3.5 px-8 rounded-2xl shadow-xl shadow-emerald-950/20 cursor-pointer transition-all active:scale-95 animate-pulse hover:animate-none"
+              >
+                <span>👉 এখনই ব্যথামুক্ত জীবনের জন্য অর্ডার করুন</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </section>
       )}
@@ -796,6 +808,18 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
                 </div>
               ))}
             </div>
+
+            {/* CTA Order Button in Benefits */}
+            <div className="text-center pt-3">
+              <button
+                type="button"
+                onClick={scrollToOrderForm}
+                className="inline-flex items-center gap-2.5 bg-[#0b6b38] hover:bg-[#08522b] text-white font-black text-sm sm:text-base py-3.5 px-8 rounded-2xl shadow-xl shadow-emerald-950/20 cursor-pointer transition-all active:scale-95 animate-pulse hover:animate-none"
+              >
+                <span>👉 অফার মূল্যে এখনই অর্ডার কনফার্ম করুন</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </section>
       )}
@@ -833,6 +857,18 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
                 </div>
               ))}
             </div>
+
+            {/* CTA Order Button in Target Audience */}
+            <div className="text-center pt-3">
+              <button
+                type="button"
+                onClick={scrollToOrderForm}
+                className="inline-flex items-center gap-2.5 bg-[#0b6b38] hover:bg-[#08522b] text-white font-black text-sm sm:text-base py-3.5 px-8 rounded-2xl shadow-xl shadow-emerald-950/20 cursor-pointer transition-all active:scale-95"
+              >
+                <span>👉 আপনার পছন্দের প্যাকেজটি অর্ডার করুন</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </section>
       )}
@@ -865,6 +901,18 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* CTA Order Button in Gallery */}
+            <div className="text-center pt-3">
+              <button
+                type="button"
+                onClick={scrollToOrderForm}
+                className="inline-flex items-center gap-2.5 bg-[#0b6b38] hover:bg-[#08522b] text-white font-black text-sm sm:text-base py-3.5 px-8 rounded-2xl shadow-xl shadow-emerald-950/20 cursor-pointer transition-all active:scale-95 animate-pulse hover:animate-none"
+              >
+                <span>👉 আসল পণ্য হাতে পেতে এখনই অর্ডার করুন</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </section>
@@ -977,6 +1025,18 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
                 </div>
               ))}
             </div>
+
+            {/* CTA Order Button in Reviews */}
+            <div className="text-center pt-3">
+              <button
+                type="button"
+                onClick={scrollToOrderForm}
+                className="inline-flex items-center gap-2.5 bg-[#0b6b38] hover:bg-[#08522b] text-white font-black text-sm sm:text-base py-3.5 px-8 rounded-2xl shadow-xl shadow-emerald-950/20 cursor-pointer transition-all active:scale-95 animate-pulse hover:animate-none"
+              >
+                <span>👉 গ্রাহকদের মতো সেরা রেজাল্ট পেতে এখনই অর্ডার করুন</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </section>
       )}
@@ -1018,6 +1078,18 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
                   </div>
                 );
               })}
+            </div>
+
+            {/* CTA Order Button in FAQ */}
+            <div className="text-center pt-3">
+              <button
+                type="button"
+                onClick={scrollToOrderForm}
+                className="inline-flex items-center gap-2.5 bg-[#0b6b38] hover:bg-[#08522b] text-white font-black text-sm sm:text-base py-3.5 px-8 rounded-2xl shadow-xl shadow-emerald-950/20 cursor-pointer transition-all active:scale-95 animate-pulse hover:animate-none"
+              >
+                <span>👉 সরাসরি ক্যাশ অন ডেলিভারিতে অর্ডার করতে নিচে ফর্মটি পূরণ করুন</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </section>
