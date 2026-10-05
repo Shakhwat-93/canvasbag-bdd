@@ -42,6 +42,18 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
   const rawPhone = settings.phone || settings.whatsappNumber || "01942212267";
   const displayPhone = rawPhone.startsWith("+88") ? rawPhone : `+88${rawPhone.startsWith("0") ? rawPhone : "0" + rawPhone}`;
 
+  // Lock body scroll when mobile menu drawer is open
+  React.useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -52,7 +64,7 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-white transition-shadow duration-200 border-b border-[#e5e7eb] shadow-xs">
+      <header className="w-full bg-white transition-shadow duration-200 border-b border-[#e5e7eb]">
         <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Mobile Header Row 1 */}
           <div className="flex md:hidden items-center justify-between h-16">
