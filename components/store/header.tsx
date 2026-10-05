@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -18,7 +19,12 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { itemCount, setIsCartOpen } = useCart();
+  const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedMobileCats, setExpandedMobileCats] = useState<Set<string>>(new Set());
@@ -281,148 +287,151 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
         </div>
       </header>
 
-      {/* Mobile Drawer Menu */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          <div className="relative w-4/5 max-w-sm bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-300">
-            {/* Drawer Header */}
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-              <Link
-                href="/"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-2 group"
-              >
-                <Image
-                  src={settings.logoUrl || "/brand/logo.webp"}
-                  alt="CanvasBag Logo"
-                  width={32}
-                  height={32}
-                  className="h-7 w-auto object-contain transition-transform group-hover:scale-105"
-                  unoptimized
-                />
-                <span className="text-lg font-black tracking-tight text-slate-900 group-hover:text-[#ff6b35] transition-colors">
-                  Canvas<span className="text-[#ff6b35]">Bag</span>
-                </span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 cursor-pointer"
-                aria-label="Close menu"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Drawer Body */}
-            <div className="p-4 flex-1 overflow-y-auto space-y-6">
-              <nav className="space-y-1">
+      {/* Mobile Drawer Menu (Portaled to document.body with z-[120] to avoid any clipping/stacking issues) */}
+      {mounted &&
+        isMobileMenuOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[120] md:hidden flex">
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <div className="relative w-4/5 max-w-sm bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-300">
+              {/* Drawer Header */}
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                 <Link
                   href="/"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center px-4 py-3 rounded-xl text-sm font-semibold text-slate-800 hover:bg-[#fff3ef] hover:text-[#ff6b35] transition-colors"
+                  className="flex items-center gap-2 group"
                 >
-                  হোম
+                  <Image
+                    src={settings.logoUrl || "/brand/logo.webp"}
+                    alt="CanvasBag Logo"
+                    width={32}
+                    height={32}
+                    className="h-7 w-auto object-contain transition-transform group-hover:scale-105"
+                    unoptimized
+                  />
+                  <span className="text-lg font-black tracking-tight text-slate-900 group-hover:text-[#ff6b35] transition-colors">
+                    Canvas<span className="text-[#ff6b35]">Bag</span>
+                  </span>
                 </Link>
-                <Link
-                  href="/shop"
+                <button
+                  type="button"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center px-4 py-3 rounded-xl text-sm font-semibold text-slate-800 hover:bg-[#fff3ef] hover:text-[#ff6b35] transition-colors"
+                  className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 cursor-pointer"
+                  aria-label="Close menu"
                 >
-                  শপ
-                </Link>
-                <Link
-                  href="/cart"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold text-slate-800 hover:bg-[#fff3ef] hover:text-[#ff6b35] transition-colors"
-                >
-                  <span>কার্ট</span>
-                  {itemCount > 0 && (
-                    <span className="bg-[#ff6b35] text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                      {itemCount}
-                    </span>
-                  )}
-                </Link>
-                <Link
-                  href="/track"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center px-4 py-3 rounded-xl text-sm font-semibold text-slate-800 hover:bg-[#fff3ef] hover:text-[#ff6b35] transition-colors"
-                >
-                  অর্ডার ট্র্যাক
-                </Link>
-              </nav>
-
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-4 mb-2">
-                  ক্যাটেগরিসমূহ
-                </p>
-                <div className="space-y-1">
-                  {categoryTree.map((cat) => {
-                    const hasChildren = cat.children && cat.children.length > 0;
-                    const isExpanded = expandedMobileCats.has(cat.id);
-
-                    return (
-                      <div key={cat.id} className="space-y-1">
-                        <div className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-800 hover:bg-[#fff3ef] hover:text-[#ff6b35] transition-colors">
-                          <Link
-                            href={`/category/${cat.slug}`}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex-1 truncate"
-                          >
-                            <span>{cat.name}</span>
-                          </Link>
-                          {hasChildren && (
-                            <button
-                              type="button"
-                              onClick={() => toggleMobileCat(cat.id)}
-                              className="p-1.5 text-slate-400 hover:text-slate-800"
-                              aria-label="Toggle subcategories"
-                            >
-                              <ChevronDown
-                                className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                                  isExpanded ? "rotate-180 text-[#ff6b35]" : ""
-                                }`}
-                              />
-                            </button>
-                          )}
-                        </div>
-
-                        {hasChildren && isExpanded && (
-                          <div className="pl-4 ml-3 border-l-2 border-[#ff6b35]/20 space-y-1 py-1">
-                            {cat.children.map((child) => (
-                              <Link
-                                key={child.id}
-                                href={`/category/${child.slug}`}
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="block px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-[#fff3ef] hover:text-[#ff6b35] transition-colors"
-                              >
-                                {child.name}
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              {/* Mobile Call Button */}
-              <a
-                href={`tel:${rawPhone}`}
-                className="flex items-center justify-center gap-2.5 w-full py-3.5 px-4 rounded-2xl bg-[#ff6b35] hover:bg-[#e55520] text-white font-black text-sm tracking-wide shadow-md shadow-[#ff6b35]/25 active:scale-[0.98] transition-all cursor-pointer"
-              >
-                <Phone className="w-4 h-4 fill-white" />
-                <span>{displayPhone}</span>
-              </a>
+              {/* Drawer Body */}
+              <div className="p-4 flex-1 overflow-y-auto space-y-6">
+                <nav className="space-y-1">
+                  <Link
+                    href="/"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center px-4 py-3 rounded-xl text-sm font-semibold text-slate-800 hover:bg-[#fff3ef] hover:text-[#ff6b35] transition-colors"
+                  >
+                    হোম
+                  </Link>
+                  <Link
+                    href="/shop"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center px-4 py-3 rounded-xl text-sm font-semibold text-slate-800 hover:bg-[#fff3ef] hover:text-[#ff6b35] transition-colors"
+                  >
+                    শপ
+                  </Link>
+                  <Link
+                    href="/cart"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold text-slate-800 hover:bg-[#fff3ef] hover:text-[#ff6b35] transition-colors"
+                  >
+                    <span>কার্ট</span>
+                    {itemCount > 0 && (
+                      <span className="bg-[#ff6b35] text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                        {itemCount}
+                      </span>
+                    )}
+                  </Link>
+                  <Link
+                    href="/track"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center px-4 py-3 rounded-xl text-sm font-semibold text-slate-800 hover:bg-[#fff3ef] hover:text-[#ff6b35] transition-colors"
+                  >
+                    অর্ডার ট্র্যাক
+                  </Link>
+                </nav>
+
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-4 mb-2">
+                    ক্যাটেগরিসমূহ
+                  </p>
+                  <div className="space-y-1">
+                    {categoryTree.map((cat) => {
+                      const hasChildren = cat.children && cat.children.length > 0;
+                      const isExpanded = expandedMobileCats.has(cat.id);
+
+                      return (
+                        <div key={cat.id} className="space-y-1">
+                          <div className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-800 hover:bg-[#fff3ef] hover:text-[#ff6b35] transition-colors">
+                            <Link
+                              href={`/category/${cat.slug}`}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className="flex-1 truncate"
+                            >
+                              <span>{cat.name}</span>
+                            </Link>
+                            {hasChildren && (
+                              <button
+                                type="button"
+                                onClick={() => toggleMobileCat(cat.id)}
+                                className="p-1.5 text-slate-400 hover:text-slate-800"
+                                aria-label="Toggle subcategories"
+                              >
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                    isExpanded ? "rotate-180 text-[#ff6b35]" : ""
+                                  }`}
+                                />
+                              </button>
+                            )}
+                          </div>
+
+                          {hasChildren && isExpanded && (
+                            <div className="pl-4 ml-3 border-l-2 border-[#ff6b35]/20 space-y-1 py-1">
+                              {cat.children.map((child) => (
+                                <Link
+                                  key={child.id}
+                                  href={`/category/${child.slug}`}
+                                  onClick={() => setIsMobileMenuOpen(false)}
+                                  className="block px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-[#fff3ef] hover:text-[#ff6b35] transition-colors"
+                                >
+                                  {child.name}
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Mobile Call Button */}
+                <a
+                  href={`tel:${rawPhone}`}
+                  className="flex items-center justify-center gap-2.5 w-full py-3.5 px-4 rounded-2xl bg-[#ff6b35] hover:bg-[#e55520] text-white font-black text-sm tracking-wide shadow-md shadow-[#ff6b35]/25 active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  <Phone className="w-4 h-4 fill-white" />
+                  <span>{displayPhone}</span>
+                </a>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }
