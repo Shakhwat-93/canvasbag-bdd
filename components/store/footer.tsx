@@ -16,8 +16,8 @@ export function Footer({ categories = [], settings = {} }: FooterProps) {
 
   return (
     <footer className="bg-white text-gray-600 border-t border-[#e5e7eb] mt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] mx-auto px-4 sm:px-6 lg:px-8 py-12 2xl:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 2xl:gap-12">
           {/* Col 1: Brand & Social */}
           <div>
             <Link href="/" className="inline-flex items-center gap-2.5 mb-4 group">
@@ -177,7 +177,7 @@ export function Footer({ categories = [], settings = {} }: FooterProps) {
 
       {/* Sub-footer Copyright */}
       <div className="border-t border-gray-100 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-500">
+        <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-500">
           <p>© ২০২৬ CanvasBag. সর্বস্বত্ব সংরক্ষিত।</p>
           <div className="flex items-center gap-1">
             <span>Powered by</span>

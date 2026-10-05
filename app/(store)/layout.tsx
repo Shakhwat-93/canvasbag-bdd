@@ -4,7 +4,6 @@ import { StoreShell } from "@/components/store/store-shell";
 import { Footer } from "@/components/store/footer";
 import { CartDrawer } from "@/components/store/cart-drawer";
 import { MobileFloatingCart } from "@/components/store/mobile-floating-cart";
-import { MobileBottomNav } from "@/components/store/mobile-bottom-nav";
 import { FloatingContact } from "@/components/store/floating-contact";
 
 export const revalidate = 60;
@@ -28,7 +27,6 @@ export default async function StoreLayout({ children }: { children: React.ReactN
       {/* Global Interactive Widgets */}
       <CartDrawer />
       <MobileFloatingCart />
-      <MobileBottomNav />
       <FloatingContact settings={settings} />
     </>
   );

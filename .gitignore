@@ -45,3 +45,5 @@ supabase/.temp/
 database/*.sqlite-wal
 database/*.sqlite-shm
 database/*.sqlite-journal
+local.db
+*.db

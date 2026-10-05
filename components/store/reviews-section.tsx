@@ -35,7 +35,7 @@ export function ReviewsSection({ reviews = [] }: ReviewsSectionProps) {
 
   return (
     <section className="py-12 md:py-16 bg-[#f8f9fa] text-black">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-2 mb-2">
@@ -50,7 +50,7 @@ export function ReviewsSection({ reviews = [] }: ReviewsSectionProps) {
         </div>
 
         {/* Reviews Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 2xl:gap-8">
           {displayReviews.map((r, idx) => {
             const name = r.customer_name || r.name || "গ্রাহক";
             const initial = name.charAt(0);

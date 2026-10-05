@@ -63,8 +63,8 @@ export function OriginHeroSlider({ settings = {} }: OriginHeroSliderProps) {
 
   return (
     <section className="bg-[#fafaf9]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        <div className="relative w-full aspect-[16/9] md:aspect-[21/9] bg-[#111111] rounded-2xl md:rounded-[24px] border border-gray-200 shadow-md overflow-hidden group">
+      <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <div className="relative w-full aspect-[16/9] md:aspect-[21/9] 2xl:aspect-[24/9] bg-[#111111] rounded-2xl md:rounded-[24px] border border-gray-200 shadow-md overflow-hidden group">
           {slides.map((slide, idx) => (
             <div
               key={idx}
@@ -77,7 +77,7 @@ export function OriginHeroSlider({ settings = {} }: OriginHeroSliderProps) {
                   src={slide.image}
                   alt={slide.alt}
                   fill
-                  sizes="(max-width: 1280px) 100vw, 1200px"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1536px) 100vw, 1728px"
                   priority={idx === 0}
                   loading={idx === 0 ? "eager" : "lazy"}
                   className="object-cover object-center w-full h-full"

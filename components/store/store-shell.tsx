@@ -26,7 +26,7 @@ export function StoreShell({ settings, categories, children }: StoreShellProps) 
 
       {/* Main Content Area with Dynamic Padding */}
       <main
-        className={`flex-1 w-full max-w-full overflow-x-hidden pb-16 md:pb-0 transition-all duration-150 ${
+        className={`flex-1 w-full max-w-full overflow-x-hidden pb-0 transition-all duration-150 ${
           hasAnnouncement
             ? "pt-[148px] md:pt-[138px]"
             : "pt-[112px] md:pt-[102px]"

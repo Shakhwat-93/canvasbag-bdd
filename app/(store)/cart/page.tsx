@@ -36,7 +36,7 @@ export default function CartPage() {
 
   return (
     <div className="bg-[#fafaf9] min-h-screen py-8">
-      <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 sm:gap-8 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
+      <div className="mx-auto grid w-full max-w-6xl 2xl:max-w-7xl 3xl:max-w-[1536px] gap-6 px-4 sm:gap-8 sm:px-6 lg:grid-cols-[1fr_360px] 2xl:grid-cols-[1fr_400px] lg:px-8">
         {/* Items list */}
         <section className="space-y-6">
           <div className="flex items-center justify-between border-b border-[#e5e7eb] pb-4 bg-white p-4 rounded-2xl border">

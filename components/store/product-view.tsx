@@ -204,7 +204,7 @@ export function ProductView({ product, reviews: initialReviews, settings, relate
     <div className="min-h-screen bg-[#fafaf9] text-slate-800 pb-16">
       {/* Breadcrumb section */}
       <div className="bg-white border-b border-[#e5e7eb] py-3">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-xs font-bold text-slate-500 flex items-center gap-1.5 flex-wrap">
+        <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] px-4 sm:px-6 lg:px-8 text-xs font-bold text-slate-500 flex items-center gap-1.5 flex-wrap">
           <Link href="/" className="hover:text-[#ff6b35] transition-colors">
             Home
           </Link>
@@ -221,8 +221,8 @@ export function ProductView({ product, reviews: initialReviews, settings, relate
       </div>
 
       {/* Main product overview */}
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start p-5 sm:p-8 rounded-3xl bg-white border border-[#e5e7eb] shadow-xs">
+      <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 2xl:gap-16 items-start p-5 sm:p-8 2xl:p-10 rounded-3xl bg-white border border-[#e5e7eb] shadow-xs">
           {/* Column 1: Image Gallery */}
           <div className="space-y-4">
             <div className="relative aspect-square rounded-2xl bg-[#f8f9fa] border border-[#e5e7eb] overflow-hidden flex items-center justify-center group shadow-xs">
@@ -495,7 +495,7 @@ export function ProductView({ product, reviews: initialReviews, settings, relate
       </div>
 
       {/* Description & Specifications Tabs */}
-      <div id="details-tabs" className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div id="details-tabs" className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] px-4 py-8 sm:px-6 lg:px-8">
         <div className="rounded-3xl shadow-xs overflow-hidden bg-white border border-[#e5e7eb]">
           <div className="flex border-b border-[#e5e7eb] bg-white">
             <button
@@ -600,7 +600,7 @@ export function ProductView({ product, reviews: initialReviews, settings, relate
       </div>
 
       {/* Customer Reviews Section */}
-      <div id="reviews-section" className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div id="reviews-section" className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 mb-8 px-4">
           <span className="w-1.5 h-6 bg-[#ff6b35] rounded-full shrink-0" />
           <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight leading-normal text-left flex-1">
@@ -765,7 +765,7 @@ export function ProductView({ product, reviews: initialReviews, settings, relate
 
       {/* Related Products */}
       {relatedProducts.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <section className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between border-b border-[#e5e7eb] pb-3.5 mb-8">
             <div className="flex items-center gap-3 flex-1">
               <span className="w-1.5 h-6 bg-[#ff6b35] rounded-full shrink-0" />
@@ -781,7 +781,7 @@ export function ProductView({ product, reviews: initialReviews, settings, relate
             </Link>
           </div>
 
-          <div className="grid gap-3 sm:gap-6 grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-3 sm:gap-6 grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6">
             {relatedProducts.map((item) => (
               <ProductCard key={item.id} product={item} />
             ))}

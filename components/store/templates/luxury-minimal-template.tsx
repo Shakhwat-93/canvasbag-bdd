@@ -266,7 +266,7 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
     <div className="min-h-screen bg-white text-slate-900 font-sans antialiased selection:bg-slate-900 selection:text-white">
       {/* Navigation */}
       <header className="border-b border-slate-100 py-4 px-6 sticky top-0 bg-white/90 backdrop-blur-md z-40">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl 2xl:max-w-[1440px] 3xl:max-w-[1600px] mx-auto flex items-center justify-between">
           <Link href="/" className="inline-flex items-center gap-2.5 group">
             <Image
               src={resolved.logoUrl || "/brand/logo.webp"}
@@ -302,7 +302,7 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
       </header>
 
       {/* Hero Section */}
-      <section className="py-12 md:py-20 px-6 max-w-6xl mx-auto">
+      <section className="py-12 md:py-20 px-6 max-w-6xl 2xl:max-w-[1440px] 3xl:max-w-[1600px] mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
           <div className="md:col-span-7 space-y-6">
             <span className="text-xs font-bold uppercase tracking-widest text-[#D45266]">
@@ -345,7 +345,7 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
       {/* Benefits */}
       {resolved.benefits.length > 0 && (
         <section className="py-16 bg-slate-50 px-6 border-y border-slate-100">
-          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="max-w-6xl 2xl:max-w-[1440px] 3xl:max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 2xl:gap-12">
             {resolved.benefits.map((b, i) => (
               <div key={i} className="space-y-3">
                 <span className="text-xs font-black text-[#D45266]">0{i + 1}</span>
@@ -358,7 +358,7 @@ export function LuxuryMinimalTemplate({ page, products, settings }: TemplateProp
       )}
 
       {/* Order Section */}
-      <section id="order-section" className="py-20 px-6 max-w-3xl mx-auto">
+      <section id="order-section" className="py-20 px-6 max-w-3xl 2xl:max-w-4xl mx-auto">
         <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 shadow-2xl space-y-8">
           <div className="text-center space-y-2">
             <h2 className="text-2xl sm:text-3xl font-black text-slate-950">অর্ডার কনফার্ম করুন</h2>

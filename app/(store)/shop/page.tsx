@@ -33,7 +33,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   return (
     <div className="bg-[#fafaf9] min-h-screen py-8">
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="mx-auto w-full max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center mb-8 text-center bg-white border border-[#e5e7eb] rounded-2xl p-6 shadow-xs">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
             {rawQuery ? `অনুসন্ধানের ফলাফল: "${rawQuery}"` : "সকল প্রিমিয়াম কালেকশন"}
@@ -55,7 +55,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3.5 sm:gap-5 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3.5 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

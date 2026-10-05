@@ -80,7 +80,7 @@ export function FloatingContact({ settings = {} }: FloatingContactProps) {
   return (
     <div
       ref={containerRef}
-      className="fixed bottom-20 md:bottom-6 right-5 md:right-6 z-[100] font-poppins select-none flex flex-col items-center"
+      className="fixed bottom-5 md:bottom-6 right-5 md:right-6 z-[100] font-poppins select-none flex flex-col items-center"
     >
       {/* Action Menu (Messenger, WhatsApp, Live Chat) */}
       <div

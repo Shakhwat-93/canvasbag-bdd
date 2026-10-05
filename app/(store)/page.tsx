@@ -19,7 +19,7 @@ export default async function HomePage() {
   const [settings, categories, bestSellers] = await Promise.all([
     supabaseCatalogService.getSettings(),
     supabaseCatalogService.getCategories(),
-    getTopSellingProducts(8),
+    getTopSellingProducts(12),
   ]);
 
   // Approved customer reviews from local DB
@@ -47,7 +47,7 @@ export default async function HomePage() {
 
       {/* 4. Best Sellers / Hot Selling Products Grid */}
       <section id="best-sellers" className="py-12 md:py-16 bg-white text-black font-sans">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -72,7 +72,7 @@ export default async function HomePage() {
           </div>
 
           {/* Product Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 2xl:gap-6">
             {bestSellers.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

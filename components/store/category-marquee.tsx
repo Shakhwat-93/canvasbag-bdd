@@ -16,7 +16,7 @@ export function CategoryMarquee({ categories = [] }: CategoryMarqueeProps) {
 
   return (
     <section id="categories" className="py-10 md:py-16 bg-[#fcfdfe] overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 mb-3 bg-[#fff3ef] px-4 py-1.5 rounded-full border border-[#ff6b35]/10">

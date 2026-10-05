@@ -92,7 +92,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <div className="bg-[#fafaf9] min-h-screen pb-16">
         {/* Dynamic Breadcrumbs Nav */}
         <div className="border-b border-[#e5e7eb] bg-white">
-          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
+          <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] px-4 sm:px-6 lg:px-8 py-3">
             <nav aria-label="Breadcrumb" className="flex items-center text-xs font-medium text-slate-500 overflow-x-auto no-scrollbar">
               {fullBreadcrumbs.map((crumb, idx) => {
                 const isLast = idx === fullBreadcrumbs.length - 1;
@@ -117,44 +117,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           </div>
         </div>
 
-        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6">
-          {/* Category Header Hero */}
-          <div className="bg-white rounded-3xl p-5 sm:p-8 border border-[#e5e7eb] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2 flex-1">
-              <div className="flex items-center gap-2.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)]" />
-                <span className="text-[11px] font-extrabold uppercase tracking-widest text-[var(--primary)]">
-                  কালেকশন
-                </span>
-                <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200/80">
-                  {products.length} টি পণ্য
-                </span>
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
-                {currentCategory.name}
-              </h1>
-
-              {currentCategory.description && (
-                <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
-                  {currentCategory.description}
-                </p>
-              )}
-            </div>
-
-            {currentCategory.image && (
-              <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 flex items-center justify-center">
-                <Image
-                  src={currentCategory.image}
-                  alt={currentCategory.name}
-                  fill
-                  sizes="(max-width: 640px) 96px, 128px"
-                  className="object-contain p-1"
-                  priority
-                />
-              </div>
-            )}
-          </div>
+        <section className="mx-auto w-full max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
+          {/* SEO Accessible Heading */}
+          <h1 className="sr-only">{currentCategory.name}</h1>
 
           {/* Child Categories Pills (Subcategories Exploration) */}
           {childCategories.length > 0 && (
@@ -197,7 +162,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 pt-2">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 pt-2">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

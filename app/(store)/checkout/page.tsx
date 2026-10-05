@@ -209,7 +209,7 @@ export default function CheckoutPage() {
     <div className="bg-[#fafaf9] min-h-screen text-slate-800 pb-16 font-sans">
       {/* Title / Header */}
       <div className="bg-white border-b border-[#e5e7eb] py-6">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
+        <div className="mx-auto max-w-5xl 2xl:max-w-6xl px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase">
             অর্ডার কনফার্ম করুন (ক্যাশ অন ডেলিভারি)
           </h1>
@@ -219,9 +219,9 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl 2xl:max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 sm:gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] 2xl:grid-cols-[1fr_420px] gap-6 sm:gap-8 2xl:gap-10 items-start">
             {/* Left Column: Billing & Shipping */}
             <div className="w-full flex flex-col gap-6">
               <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 sm:p-8 shadow-xs space-y-6">

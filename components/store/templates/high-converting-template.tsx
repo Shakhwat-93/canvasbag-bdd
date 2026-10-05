@@ -434,7 +434,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
       {/* 1. TOP ANNOUNCEMENT MARQUEE / TICKER */}
       {isSectionEnabled("top_marquee") && (
         <aside aria-label="Announcement" className="bg-[#0e3a22] text-white py-2.5 px-4 text-xs font-semibold overflow-hidden border-b border-emerald-950/40">
-          <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap text-[11px] sm:text-xs">
+          <div className="max-w-6xl 2xl:max-w-[1440px] 3xl:max-w-[1600px] mx-auto flex items-center justify-between gap-4 flex-wrap text-[11px] sm:text-xs">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="bg-amber-400 text-slate-950 font-black px-2.5 py-0.5 rounded-full text-[10px] tracking-wide inline-flex items-center gap-1 shadow-xs">
                 <Flame className="w-3 h-3 text-red-600 fill-current" />
@@ -467,7 +467,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
       {/* 2. STICKY TOP NAVBAR */}
       {isSectionEnabled("navbar") && (
         <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
+          <div className="max-w-6xl 2xl:max-w-[1440px] 3xl:max-w-[1600px] mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 group">
               <Image
                 src={resolved.logoUrl || "/brand/logo.webp"}
@@ -508,7 +508,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
       {/* 3. HERO SPOTLIGHT & PRODUCT HERO */}
       {isSectionEnabled("hero") && (
         <section className="pt-6 sm:pt-8 pb-6 px-4 sm:px-6">
-          <div className="max-w-6xl mx-auto bg-white rounded-3xl p-5 sm:p-8 md:p-10 border border-slate-200/90 shadow-xl shadow-slate-200/50">
+          <div className="max-w-6xl 2xl:max-w-[1440px] 3xl:max-w-[1600px] mx-auto bg-white rounded-3xl p-5 sm:p-8 md:p-10 border border-slate-200/90 shadow-xl shadow-slate-200/50">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
               {/* Product Pitch & Buy Box (Left side in reference) */}
               <div className="lg:col-span-6 space-y-5 order-2 lg:order-1">
@@ -693,7 +693,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
       {/* 4. LIVE URGENCY COUNTDOWN & STOCK BAR */}
       {isSectionEnabled("urgency_timer") && (
         <section className="py-2 px-4 sm:px-6">
-          <div className="max-w-6xl mx-auto bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200/90 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+          <div className="max-w-6xl 2xl:max-w-[1440px] 3xl:max-w-[1600px] mx-auto bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200/90 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
             {/* Countdown Clock */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm animate-bounce">
@@ -737,7 +737,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
       {/* 5. PAIN POINTS / PROBLEM AGITATION ("আপনি কি প্রতিদিন এই ধরণের সমস্যার সাথে যুদ্ধ করছেন?") */}
       {isSectionEnabled("pain_points") && resolved.painPoints.length > 0 && (
         <section className="py-12 px-4 sm:px-6">
-          <div className="max-w-6xl mx-auto space-y-8">
+          <div className="max-w-6xl 2xl:max-w-[1440px] 3xl:max-w-[1600px] mx-auto space-y-8">
             <div className="text-center max-w-2xl mx-auto space-y-3">
               <div className="inline-block relative">
                 <h2 className="text-2xl sm:text-3xl font-black text-[#A81C2E] leading-snug">
@@ -789,7 +789,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
       {/* 6. SOLUTION SPOTLIGHT & DIMENSIONAL BREAKDOWN ("কেন আমাদের ব্যাগটি সেরা?") */}
       {isSectionEnabled("solution_spotlight") && (
         <section className="py-10 px-4 sm:px-6">
-          <div className="max-w-6xl mx-auto bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/90 shadow-lg">
+          <div className="max-w-6xl 2xl:max-w-[1440px] 3xl:max-w-[1600px] mx-auto bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/90 shadow-lg">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               {/* Product Dimension/Technical Image */}
               <div className="lg:col-span-6">
@@ -851,7 +851,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
       {/* 7. BENEFITS GRID ("এই প্রডাক্টটি ব্যবহারে আপনি যা পাবেন") */}
       {isSectionEnabled("benefits") && resolved.benefits.length > 0 && (
         <section className="py-10 px-4 sm:px-6">
-          <div className="max-w-6xl mx-auto space-y-8">
+          <div className="max-w-6xl 2xl:max-w-[1440px] 3xl:max-w-[1600px] mx-auto space-y-8">
             <div className="text-center max-w-xl mx-auto space-y-2">
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
                 {resolved.benefitsTitle || "এই প্রডাক্টটি নিয়মিত ব্যবহারে আপনি যা পাবেন:"}
@@ -861,7 +861,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
               </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 2xl:gap-6">
               {resolved.benefits.map((b, idx) => (
                 <div
                   key={idx}
@@ -896,7 +896,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
       {/* 8. TARGET AUDIENCE ("এটি বিশেষভাবে যাদের জন্য উপযোগী:") */}
       {isSectionEnabled("target_audience") && resolved.targetAudience.length > 0 && (
         <section className="py-10 px-4 sm:px-6">
-          <div className="max-w-6xl mx-auto space-y-8">
+          <div className="max-w-6xl 2xl:max-w-[1440px] 3xl:max-w-[1600px] mx-auto space-y-8">
             <div className="text-center max-w-xl mx-auto space-y-2">
               <h2 className="text-2xl sm:text-3xl font-black text-emerald-900">
                 {resolved.targetAudienceTitle || "এটি বিশেষভাবে যাদের জন্য উপযোগী:"}
@@ -906,7 +906,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 2xl:gap-6">
               {resolved.targetAudience.map((aud, idx) => (
                 <div
                   key={idx}
@@ -945,14 +945,14 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
       {/* 9. REAL PRODUCT PHOTO GALLERY ("আমাদের প্রোডাক্ট গ্যালারি") */}
       {isSectionEnabled("gallery") && resolved.galleryImages.length > 1 && (
         <section className="py-12 px-4 sm:px-6">
-          <div className="max-w-6xl mx-auto space-y-6">
+          <div className="max-w-6xl 2xl:max-w-[1440px] 3xl:max-w-[1600px] mx-auto space-y-6">
             <div className="text-center space-y-1">
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900">আমাদের প্রোডাক্ট গ্যালারি</h2>
               <p className="text-xs text-slate-500 font-semibold">ক্যামেরায় তোলা বাস্তব পণ্যের কিছু রিয়েল ছবি ও ফিনিশিং</p>
             </div>
 
             {/* 2-column or 3-column Real Authentic Showcase Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 2xl:gap-8">
               {resolved.galleryImages.slice(0, 4).map((img, idx) => (
                 <div
                   key={idx}
@@ -990,7 +990,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
       {/* 10. EMOTIONAL / INSPIRING WARNING BANNER ("একটি কথা মনে রাখবেন...") */}
       {isSectionEnabled("urgent_notice") && resolved.urgentNotice && (
         <section className="py-10 px-4 sm:px-6">
-          <div className="max-w-5xl mx-auto bg-[#0B1528] rounded-3xl p-8 sm:p-12 text-center text-white space-y-5 shadow-2xl relative overflow-hidden">
+          <div className="max-w-5xl 2xl:max-w-6xl mx-auto bg-[#0B1528] rounded-3xl p-8 sm:p-12 text-center text-white space-y-5 shadow-2xl relative overflow-hidden">
             <div className="absolute -top-24 -left-24 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -1052,7 +1052,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
       {/* 12. CUSTOMER REVIEWS */}
       {isSectionEnabled("reviews") && resolved.reviews.length > 0 && (
         <section className="py-10 px-4 sm:px-6">
-          <div className="max-w-6xl mx-auto space-y-8">
+          <div className="max-w-6xl 2xl:max-w-[1440px] 3xl:max-w-[1600px] mx-auto space-y-8">
             <div className="text-center space-y-2">
               <span className="text-xs font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
                 কাস্টমারদের মতামত
@@ -1062,7 +1062,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 2xl:gap-8">
               {resolved.reviews.map((rev, idx) => (
                 <div
                   key={idx}
@@ -1167,7 +1167,7 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
       {/* 14. HIGH-CONVERTING 2-COLUMN CASH ON DELIVERY CHECKOUT FORM */}
       {isSectionEnabled("order_form") && (
         <section id="order-form-section" className="py-14 px-4 sm:px-6">
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-5xl 2xl:max-w-6xl mx-auto">
             <div className="bg-white rounded-3xl border-2 border-emerald-200 shadow-2xl p-6 sm:p-10 space-y-8 relative overflow-hidden">
               {/* Form Header */}
               <div className="text-center space-y-2 border-b border-slate-150 pb-6">

@@ -53,7 +53,7 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
   return (
     <>
       <header className="sticky top-0 z-50 bg-white transition-shadow duration-200 border-b border-[#e5e7eb] shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Mobile Header Row 1 */}
           <div className="flex md:hidden items-center justify-between h-16">
             <div className="flex items-center justify-start w-28">
@@ -117,7 +117,7 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
             </Link>
 
             {/* Desktop Search */}
-            <form onSubmit={handleSearchSubmit} className="flex-1 max-w-xl mx-auto">
+            <form onSubmit={handleSearchSubmit} className="flex-1 max-w-xl 2xl:max-w-2xl mx-auto">
               <div className="relative w-full">
                 <input
                   type="text"

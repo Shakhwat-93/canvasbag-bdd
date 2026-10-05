@@ -37,7 +37,7 @@ export function WhyChooseUs() {
 
   return (
     <section className="py-12 md:py-16 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-10">
           <span className="text-xs font-bold text-[#ff6b35] uppercase tracking-wider bg-[#fff3ef] px-3.5 py-1 rounded-full border border-[#ff6b35]/15">
@@ -52,7 +52,7 @@ export function WhyChooseUs() {
         </div>
 
         {/* Feature Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 2xl:gap-8">
           {features.map((f, idx) => (
             <div
               key={idx}
