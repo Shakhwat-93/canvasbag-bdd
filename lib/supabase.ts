@@ -2,15 +2,24 @@ import { createClient } from "@supabase/supabase-js";
 import type { Category, Product, SiteSettings, LandingPage, RemoteOrder } from "@/lib/types";
 import { categories as fallbackCategories, products as fallbackProducts, defaultSettings } from "@/lib/data";
 
-const CATALOG_URL = process.env.SUPABASE_CATALOG_URL || "http://supabasekong-a5tg2fvpwj6emkewfdknamid.187.77.159.209.sslip.io";
+const CATALOG_URL =
+  process.env.SUPABASE_CATALOG_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "http://supabasekong-a5tg2fvpwj6emkewfdknamid.187.77.159.209.sslip.io";
 const CATALOG_KEY =
   process.env.SUPABASE_CATALOG_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc4ODc3MzEwMCwiZXhwIjo0OTQ0NDQ2NzAwLCJyb2xlIjoiYW5vbiJ9.xKr5ARhjhbCSpBSFNjU9LuAl7Do_CMfN0So9h43swaQ";
 
-const ORDERS_URL = process.env.SUPABASE_ORDERS_URL || "https://drbpysumezfjbudxzxzj.supabase.co";
+const ORDERS_URL =
+  process.env.SUPABASE_ORDERS_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "http://supabasekong-a5tg2fvpwj6emkewfdknamid.187.77.159.209.sslip.io";
 const ORDERS_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
   process.env.SUPABASE_ORDERS_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyYnB5c3VtZXpmamJ1ZHh6eHpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NzE0MzQsImV4cCI6MjA4ODU0NzQzNH0.Ki7U_uXoTxZ4B9x1ExBuYOnTBZwXS9acMkx7CzlT2sA";
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc4ODc3MzEwMCwiZXhwIjo0OTQ0NDQ2NzAwLCJyb2xlIjoic2VydmljZV9yb2xlIn0.oJDLraUnEOqNYdxvPPozV4U2ugVcuedE-oNBNJNHhCU";
 
 export const supabaseCatalog = createClient(CATALOG_URL, CATALOG_KEY);
 export const supabaseOrders = createClient(ORDERS_URL, ORDERS_KEY);

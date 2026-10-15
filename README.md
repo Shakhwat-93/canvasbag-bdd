@@ -44,8 +44,8 @@ In **Project Settings → Environment Variables**, add the following keys from `
 ```env
 SUPABASE_CATALOG_URL=http://supabasekong-a5tg2fvpwj6emkewfdknamid.187.77.159.209.sslip.io
 SUPABASE_CATALOG_KEY=your_catalog_jwt_key
-SUPABASE_ORDERS_URL=https://drbpysumezfjbudxzxzj.supabase.co
-SUPABASE_ORDERS_KEY=your_orders_jwt_key
+SUPABASE_ORDERS_URL=http://supabasekong-a5tg2fvpwj6emkewfdknamid.187.77.159.209.sslip.io
+SUPABASE_ORDERS_KEY=your_service_role_jwt_key
 R2_ACCOUNT_ID=your_r2_account_id
 R2_ACCESS_KEY_ID=your_r2_access_key
 R2_SECRET_ACCESS_KEY=your_r2_secret_key

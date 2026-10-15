@@ -2,10 +2,14 @@ import type { Product } from "./types";
 import { getAllLocalOrders } from "./db";
 
 const ORDERS_URL =
-  process.env.SUPABASE_ORDERS_URL || "https://drbpysumezfjbudxzxzj.supabase.co";
+  process.env.SUPABASE_ORDERS_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "http://supabasekong-a5tg2fvpwj6emkewfdknamid.187.77.159.209.sslip.io";
 const ORDERS_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
   process.env.SUPABASE_ORDERS_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyYnB5c3VtZXpmamJ1ZHh6eHpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NzE0MzQsImV4cCI6MjA4ODU0NzQzNH0.Ki7U_uXoTxZ4B9x1ExBuYOnTBZwXS9acMkx7CzlT2sA";
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc4ODc3MzEwMCwiZXhwIjo0OTQ0NDQ2NzAwLCJyb2xlIjoic2VydmljZV9yb2xlIn0.oJDLraUnEOqNYdxvPPozV4U2ugVcuedE-oNBNJNHhCU";
 
 export interface ProductSalesStat {
   productId: string;
