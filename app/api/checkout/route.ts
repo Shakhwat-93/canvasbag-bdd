@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "127.0.0.1";
 
     // 1. Write to Remote Supabase Orders DB
-    const orderedItems = items.map((item) => {
+    const orderedItems = items.map((item, idx) => {
       const dbName = resolveDbProductName(item);
       const isCleanName = Boolean(body.lp_slug) || Boolean(body.db_product_name) || dbName.includes("Combo");
       const vName = !isCleanName && item.variantName && item.variantName !== "Standard" ? ` - ${item.variantName}` : "";
@@ -171,6 +171,7 @@ export async function POST(req: NextRequest) {
       }
 
       return {
+        id: item.productId || (item as any).id || `prod-${idx}`,
         name: `${dbName}${vName}`,
         price: itemPrice,
         quantity: qty,
@@ -248,10 +249,23 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Dispatch Server-Side Meta CAPI Event
+    let fbp = req.cookies.get("_fbp")?.value || body.fbp;
+    const fbc = req.cookies.get("_fbc")?.value || body.fbc;
+    let shouldSetFbpCookie = false;
+    if (!fbp) {
+      fbp = `fb.1.${Date.now()}.${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+      shouldSetFbpCookie = true;
+    }
+
+    const testCode =
+      body.test_event_code ||
+      req.cookies.get("fb_test_code")?.value ||
+      req.headers.get("x-fb-test-code") ||
+      req.nextUrl.searchParams.get("test_event_code") ||
+      undefined;
+
     try {
       const userAgent = req.headers.get("user-agent") || undefined;
-      const fbp = req.cookies.get("_fbp")?.value;
-      const fbc = req.cookies.get("_fbc")?.value;
       const origin = req.headers.get("origin") || req.headers.get("referer") || process.env.NEXT_PUBLIC_APP_URL || "https://canvasbagbd.com";
       await sendMetaPurchaseEvent(
         {
@@ -264,13 +278,14 @@ export async function POST(req: NextRequest) {
           userAgent,
           fbp,
           fbc,
+          testCode,
         }
       );
     } catch (e) {
       console.warn("[Meta CAPI Error]", e);
     }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: true,
         orderId,
@@ -284,9 +299,20 @@ export async function POST(req: NextRequest) {
         phone: cleanPhone,
         address: address.trim(),
         note: note || "",
+        fbp,
       },
       { status: 201 }
     );
+
+    if (shouldSetFbpCookie) {
+      response.cookies.set("_fbp", fbp, {
+        maxAge: 90 * 24 * 60 * 60,
+        path: "/",
+        sameSite: "lax",
+      });
+    }
+
+    return response;
   } catch (error: any) {
     console.error("[Checkout API Error]", error);
     return NextResponse.json({ error: error.message || "Failed to process order." }, { status: 500 });

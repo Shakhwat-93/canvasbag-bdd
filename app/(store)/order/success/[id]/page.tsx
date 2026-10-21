@@ -48,10 +48,10 @@ export default async function OrderSuccessPage({ params }: OrderSuccessPageProps
           created_at: remote.created_at || new Date().toISOString(),
           items:
             remote.ordered_items && remote.ordered_items.length > 0
-              ? remote.ordered_items.map((i, idx) => ({
+              ? remote.ordered_items.map((i: any, idx: number) => ({
                   id: idx + 1,
                   order_id: remote.id,
-                  product_id: `prod-${idx}`,
+                  product_id: i.id || i.product_id || (i.name ? i.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") : `prod-${idx}`),
                   product_name: i.name,
                   variant_id: "standard",
                   variant_name: "Standard",
@@ -64,7 +64,7 @@ export default async function OrderSuccessPage({ params }: OrderSuccessPageProps
                   {
                     id: 1,
                     order_id: remote.id,
-                    product_id: `prod-0`,
+                    product_id: remote.product_name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
                     product_name: remote.product_name,
                     variant_id: "standard",
                     variant_name: "Standard",

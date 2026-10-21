@@ -5,6 +5,12 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { eventName, eventId, eventSourceUrl, userData = {}, customData = {} } = body;
+    const testCode =
+      body.test_event_code ||
+      body.testCode ||
+      req.cookies.get("fb_test_code")?.value ||
+      req.headers.get("x-fb-test-code") ||
+      undefined;
 
     if (!eventName || !eventId) {
       return NextResponse.json({ error: "Missing eventName or eventId" }, { status: 400 });
@@ -37,6 +43,7 @@ export async function POST(req: NextRequest) {
       eventName,
       eventId,
       eventSourceUrl: eventSourceUrl || req.headers.get("referer") || "https://canvasbagbd.com",
+      testCode,
       userData: mergedUserData,
       customData,
     });

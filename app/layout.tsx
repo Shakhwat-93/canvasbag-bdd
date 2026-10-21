@@ -128,6 +128,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             __html: `
               window.dataLayer = window.dataLayer || [];
               window.fbTestCode = "${fbTestCode}";
+              window._fbPixelId = "${pixelId}";
               ${
                 pixelId
                   ? `
@@ -136,10 +137,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 n=f.fbq=function(){
                   var args = Array.prototype.slice.call(arguments);
                   var cmd = args[0];
-                  // Guard 1: Prevent duplicate init for the same pixel ID
+                  // Guard 1: Allow re-init only if passing new user data (Advanced Matching), block duplicate empty inits
                   if (cmd === 'init') {
                     var pid = args[1];
-                    if (f.__cb_inited_pixels && f.__cb_inited_pixels[pid]) {
+                    var userData = args[2];
+                    if (f.__cb_inited_pixels && f.__cb_inited_pixels[pid] && !userData) {
                       return;
                     }
                     f.__cb_inited_pixels = f.__cb_inited_pixels || {};

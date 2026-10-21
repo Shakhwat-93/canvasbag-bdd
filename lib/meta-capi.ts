@@ -17,6 +17,7 @@ export interface MetaServerEventParams {
     | string;
   eventId: string;
   eventSourceUrl?: string;
+  testCode?: string;
   userData?: {
     phone?: string;
     email?: string;
@@ -29,6 +30,7 @@ export interface MetaServerEventParams {
     userAgent?: string;
     fbp?: string;
     fbc?: string;
+    externalId?: string;
   };
   customData?: Record<string, any>;
 }
@@ -38,7 +40,7 @@ export async function sendMetaServerEvent(params: MetaServerEventParams): Promis
     const settings = await getCatalogSettings();
     const pixelId = (settings.pixelId || process.env.FACEBOOK_PIXEL_ID || "1614327189772228").trim();
     const accessToken = (settings.fbAccessToken || process.env.FACEBOOK_ACCESS_TOKEN || "EAA9aZA7khMiYBSZAjid32RiNRFJrtCJa3XhQDXpfzVVYLWNrFZCOS7cxslQlhCNHgepBkvcrr85ZBnKQdyoqaupbVLqZBmuK0ZBqIyN5XasKrvII2kZBdoCuwXvDYfFE1PNuUdaI6wj2tyKcKaIgqLdp1ZAZB6Op8vSTrUjwxXSnqGEecXH7a5lMpEY7kTgm95gZDZD").trim();
-    const testCode = (settings.fbTestCode?.trim() ? settings.fbTestCode : (process.env.FACEBOOK_TEST_EVENT_CODE || "TEST99138")).trim();
+    const testCode = (params.testCode || settings.fbTestCode || process.env.FACEBOOK_TEST_EVENT_CODE || "").trim();
 
     if (!pixelId || !accessToken) {
       console.warn("[Meta CAPI] Missing pixelId or accessToken");
@@ -47,7 +49,7 @@ export async function sendMetaServerEvent(params: MetaServerEventParams): Promis
 
     const u = params.userData || {};
 
-    // Phone format
+    // Phone format: Meta CAPI requires country code without + or leading zeros (e.g. 88017XXXXXXXX)
     const rawPhone = (u.phone || "").replace(/\D/g, "");
     let phoneFormatted = rawPhone;
     if (rawPhone.length === 11 && rawPhone.startsWith("01")) {
@@ -70,8 +72,14 @@ export async function sendMetaServerEvent(params: MetaServerEventParams): Promis
     if (u.email) formattedUserData.em = [sha256(u.email)];
     if (firstName) formattedUserData.fn = [sha256(firstName)];
     if (lastName) formattedUserData.ln = [sha256(lastName)];
-    if (u.city) formattedUserData.ct = [sha256(u.city.toLowerCase())];
-    formattedUserData.country = [sha256((u.country || "bd").toLowerCase())];
+    if (u.city) formattedUserData.ct = [sha256(u.city.toLowerCase().trim())];
+    formattedUserData.country = [sha256((u.country || "bd").toLowerCase().trim())];
+
+    if (u.externalId) {
+      formattedUserData.external_id = [sha256(u.externalId)];
+    } else if (phoneFormatted) {
+      formattedUserData.external_id = [sha256(phoneFormatted)];
+    }
 
     if (u.ip) formattedUserData.client_ip_address = u.ip;
     if (u.userAgent) formattedUserData.client_user_agent = u.userAgent;
@@ -100,24 +108,52 @@ export async function sendMetaServerEvent(params: MetaServerEventParams): Promis
     }
 
     const url = `https://graph.facebook.com/v20.0/${pixelId}/events?access_token=${accessToken}`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    
+    // Bounded retry handling for transient errors (5xx, 429, network) with identical event_id
+    const maxRetries = 2;
+    let lastError: any = null;
 
-    if (res.ok) {
-      console.log(
-        `[Meta CAPI] ${params.eventName} sent successfully (ID: ${params.eventId})${
-          testCode ? ` [TestCode: ${testCode}]` : ""
-        }`
-      );
-      return true;
-    } else {
-      const errJson = await res.json();
-      console.warn(`[Meta CAPI] Failed to send ${params.eventName}:`, errJson);
-      return false;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          await new Promise((resolve) => setTimeout(resolve, attempt * 400));
+        }
+
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(6000),
+        });
+
+        if (res.ok) {
+          const resJson = await res.json().catch(() => ({}));
+          console.log(
+            `[Meta CAPI] ${params.eventName} sent successfully (ID: ${params.eventId})${
+              testCode ? ` [TestCode: ${testCode}]` : ""
+            }`
+          );
+          if (resJson.messages && resJson.messages.length > 0) {
+            console.log(`[Meta CAPI Diagnostics]`, resJson.messages);
+          }
+          return true;
+        }
+
+        const errJson = await res.json().catch(() => ({}));
+        lastError = errJson;
+
+        // If client error (4xx) other than rate limit (429), don't retry
+        if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+          console.warn(`[Meta CAPI] Request rejected (${res.status}) on ${params.eventName}:`, errJson);
+          return false;
+        }
+      } catch (err: any) {
+        lastError = err;
+      }
     }
+
+    console.warn(`[Meta CAPI] Failed to send ${params.eventName} after retries:`, lastError);
+    return false;
   } catch (err: any) {
     console.error(`[Meta CAPI Error] ${err.message}`);
     return false;
@@ -133,13 +169,14 @@ export async function sendMetaPurchaseEvent(
     total: number;
     fullUrl?: string;
   },
-  items: Array<{ productId?: string; id?: string; price: number; quantity?: number }>,
+  items: Array<{ productId?: string; id?: string; price: number; quantity?: number; name?: string }>,
   reqInfo: {
     ip?: string;
     userAgent?: string;
     fbp?: string;
     fbc?: string;
     pixelIdOverride?: string;
+    testCode?: string;
   }
 ): Promise<boolean> {
   const contents = items.map((item) => ({
@@ -166,10 +203,14 @@ export async function sendMetaPurchaseEvent(
     customData.num_items = totalQuantity;
   }
 
+  const cleanDigits = (order.phone || "").replace(/\D/g, "");
+  const externalId = cleanDigits.length >= 10 ? (cleanDigits.startsWith("01") ? `88${cleanDigits}` : cleanDigits) : order.id;
+
   return sendMetaServerEvent({
     eventName: "Purchase",
     eventId: `order_${order.id}`,
     eventSourceUrl: order.fullUrl || "https://canvasbagbd.com/checkout",
+    testCode: reqInfo.testCode,
     userData: {
       phone: order.phone,
       name: order.name,
@@ -179,6 +220,7 @@ export async function sendMetaPurchaseEvent(
       userAgent: reqInfo.userAgent,
       fbp: reqInfo.fbp,
       fbc: reqInfo.fbc,
+      externalId,
     },
     customData,
   });

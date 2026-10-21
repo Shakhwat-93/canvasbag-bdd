@@ -48,21 +48,22 @@ function safeFbqTrack(
   if (typeof window === "undefined") return;
 
   const eventId = eventOptions?.eventID;
-  if (eventId) {
-    if (firedFbqEventIds.has(eventId)) {
-      console.log(`[Meta Pixel Browser] Skipped duplicate eventID: ${eventId}`);
-      return;
-    }
-    firedFbqEventIds.add(eventId);
+  if (eventId && firedFbqEventIds.has(eventId)) {
+    console.log(`[Meta Pixel Browser] Skipped duplicate eventID: ${eventId}`);
+    return;
   }
 
   const isStandard = META_STANDARD_EVENTS.has(pixelName);
   const trackMethod = isStandard ? "track" : "trackCustom";
 
+  let attempts = 0;
+  const maxAttempts = 15; // Poll up to 3 seconds (15 * 200ms) for fbevents.js
+
   const executeTrack = () => {
     if (typeof window.fbq === "function") {
       try {
         if (eventId) {
+          firedFbqEventIds.add(eventId);
           window.fbq(trackMethod, pixelName, pixelPayload, { eventID: eventId });
         } else if (Object.keys(pixelPayload).length > 0) {
           window.fbq(trackMethod, pixelName, pixelPayload);
@@ -78,15 +79,13 @@ function safeFbqTrack(
       } catch (err) {
         console.warn(`[Meta Pixel Browser] Error firing ${pixelName}:`, err);
       }
+    } else if (attempts < maxAttempts) {
+      attempts++;
+      setTimeout(executeTrack, 200);
     }
   };
 
-  if (typeof window.fbq === "function") {
-    executeTrack();
-  } else {
-    // Retry once after 200ms if script is still parsing
-    setTimeout(executeTrack, 200);
-  }
+  executeTrack();
 }
 
 /**
@@ -109,10 +108,11 @@ async function dispatchServerEvent(params: {
   }
 
   try {
+    const testCode = sessionStorage.getItem("fb_test_code") || undefined;
     fetch("/api/analytics/capi", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(params),
+      body: JSON.stringify({ ...params, testCode }),
       keepalive: true,
     }).catch((err) => {
       console.warn("[Analytics] CAPI background dispatch failed:", err);
@@ -349,18 +349,19 @@ export function trackClientEvent(name: string, payload: Record<string, any> = {}
       eventID: eventId,
     };
 
-    // Advanced Matching user properties
+    // Advanced Matching user properties for Meta Pixel
     if (payload.user_data && typeof window.fbq === "function") {
       try {
         const ph = payload.user_data.phone_number?.replace(/\D/g, "");
         const fn = payload.user_data.address?.first_name?.trim();
         const ct = payload.user_data.address?.city?.trim();
-        window.fbq("setUserProperties", {
-          ...(ph ? { ph } : {}),
-          ...(fn ? { fn } : {}),
-          ...(ct ? { ct } : {}),
-          country: "bd",
-        });
+        const userData: Record<string, any> = { country: "bd" };
+        if (ph) userData.ph = ph.startsWith("01") ? `88${ph}` : ph;
+        if (fn) userData.fn = fn;
+        if (ct) userData.ct = ct.toLowerCase();
+
+        const pixelId = (window as any)._fbPixelId || "1614327189772228";
+        window.fbq("init", pixelId, userData);
       } catch {}
     }
 

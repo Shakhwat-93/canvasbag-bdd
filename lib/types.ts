@@ -88,6 +88,7 @@ export type Product = {
 };
 
 export type CartItem = {
+  id?: string;
   productId: string;
   slug: string;
   name: string;

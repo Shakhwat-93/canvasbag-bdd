@@ -370,7 +370,7 @@ export const defaultSettings: import("@/lib/types").SiteSettings = {
   ga4Id: "G-KF0PE2GR6K",
   pixelId: "1614327189772228",
   fbAccessToken: "EAA9aZA7khMiYBSZAjid32RiNRFJrtCJa3XhQDXpfzVVYLWNrFZCOS7cxslQlhCNHgepBkvcrr85ZBnKQdyoqaupbVLqZBmuK0ZBqIyN5XasKrvII2kZBdoCuwXvDYfFE1PNuUdaI6wj2tyKcKaIgqLdp1ZAZB6Op8vSTrUjwxXSnqGEecXH7a5lMpEY7kTgm95gZDZD",
-  fbTestCode: "TEST99138",
+  fbTestCode: "",
   duplicateBlockHours: 6,
   heroMobileFourCards: true,
   shippingInsideDhaka: 60,

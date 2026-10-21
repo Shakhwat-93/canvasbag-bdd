@@ -34,6 +34,17 @@ export default function CheckoutPage() {
   // Trigger begin_checkout strictly once per checkout session
   const hasTrackedCheckoutRef = useRef(false);
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        const tc = sp.get("test_event_code") || sp.get("fb_test_code");
+        if (tc) {
+          sessionStorage.setItem("fb_test_code", tc.trim());
+          document.cookie = `fb_test_code=${encodeURIComponent(tc.trim())}; path=/; max-age=7200; SameSite=Lax`;
+        }
+      } catch {}
+    }
+
     if (items.length > 0 && !hasTrackedCheckoutRef.current) {
       hasTrackedCheckoutRef.current = true;
       trackClientEvent("begin_checkout", {
@@ -133,6 +144,19 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
+      const getClientCookie = (cname: string) => {
+        if (typeof document === "undefined") return undefined;
+        const m = document.cookie.match(new RegExp("(^|;\\s*)" + cname + "=([^;]*)"));
+        return m ? decodeURIComponent(m[2]) : undefined;
+      };
+
+      const fbp = getClientCookie("_fbp");
+      const fbc = getClientCookie("_fbc");
+      const testEventCode =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem("fb_test_code") || getClientCookie("fb_test_code") || undefined
+          : undefined;
+
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -143,6 +167,9 @@ export default function CheckoutPage() {
           shipping_zone: shippingZone,
           note: note.trim(),
           items,
+          fbp,
+          fbc,
+          test_event_code: testEventCode,
         }),
       });
 
