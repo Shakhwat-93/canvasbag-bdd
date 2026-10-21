@@ -48,9 +48,13 @@ function safeFbqTrack(
   if (typeof window === "undefined") return;
 
   const eventId = eventOptions?.eventID;
-  if (eventId && firedFbqEventIds.has(eventId)) {
-    console.log(`[Meta Pixel Browser] Skipped duplicate eventID: ${eventId}`);
-    return;
+  if (eventId) {
+    if (firedFbqEventIds.has(eventId)) {
+      console.log(`[Meta Pixel Browser] Skipped duplicate eventID: ${eventId}`);
+      return;
+    }
+    // Mark immediately to prevent race conditions during polling
+    firedFbqEventIds.add(eventId);
   }
 
   const isStandard = META_STANDARD_EVENTS.has(pixelName);
@@ -63,7 +67,6 @@ function safeFbqTrack(
     if (typeof window.fbq === "function") {
       try {
         if (eventId) {
-          firedFbqEventIds.add(eventId);
           window.fbq(trackMethod, pixelName, pixelPayload, { eventID: eventId });
         } else if (Object.keys(pixelPayload).length > 0) {
           window.fbq(trackMethod, pixelName, pixelPayload);
@@ -127,14 +130,17 @@ async function dispatchServerEvent(params: {
 export function trackPageView(pagePath?: string) {
   if (typeof window === "undefined") return;
 
-  const currentPath = pagePath || window.location.pathname || "/";
+  const rawPath = pagePath || window.location.pathname || "/";
+  // Normalize path without query strings or trailing slashes for rock-solid deduplication
+  const currentPath = rawPath.split("?")[0].replace(/\/+$/, "") || "/";
   const fullUrl = window.location.href;
   const pageTitle = typeof document !== "undefined" ? document.title : "";
 
-  // Deduplication check: max once per 1500ms for exact same path
+  // Strict deduplication check: max once per 2500ms for exact same route path
   const now = Date.now();
   const dedupeKey = `page_view_${currentPath}`;
-  if (lastFiredEvents[dedupeKey] && now - lastFiredEvents[dedupeKey] < 1500) {
+  if (lastFiredEvents[dedupeKey] && now - lastFiredEvents[dedupeKey] < 2500) {
+    console.log(`[Analytics] Blocked duplicate PageView for ${currentPath}`);
     return;
   }
   lastFiredEvents[dedupeKey] = now;
@@ -349,23 +355,7 @@ export function trackClientEvent(name: string, payload: Record<string, any> = {}
       eventID: eventId,
     };
 
-    // Advanced Matching user properties for Meta Pixel
-    if (payload.user_data && typeof window.fbq === "function") {
-      try {
-        const ph = payload.user_data.phone_number?.replace(/\D/g, "");
-        const fn = payload.user_data.address?.first_name?.trim();
-        const ct = payload.user_data.address?.city?.trim();
-        const userData: Record<string, any> = { country: "bd" };
-        if (ph) userData.ph = ph.startsWith("01") ? `88${ph}` : ph;
-        if (fn) userData.fn = fn;
-        if (ct) userData.ct = ct.toLowerCase();
-
-        const pixelId = (window as any)._fbPixelId || "1614327189772228";
-        window.fbq("init", pixelId, userData);
-      } catch {}
-    }
-
-    // 1. Fire Client Browser Pixel
+    // 1. Fire Client Browser Pixel with single matching eventID
     safeFbqTrack(pixelName, pixelPayload, eventOptions);
 
     // 2. Fire Server-Side Conversions API (CAPI) for non-purchase events

@@ -19,14 +19,18 @@ export function PurchaseTracker({ order: initialOrder, orderId }: PurchaseTracke
     if (hasExecutedRef.current) return;
     hasExecutedRef.current = true;
 
-    // 1. Clear cart once
-    clearCart();
-
-    // 2. Prevent duplicate tracking in localStorage across reloads
+    // 1. Prevent duplicate tracking in localStorage or window across reloads and component re-mounts
     const trackKey = `purchase_tracked_${orderId}`;
-    if (typeof window !== "undefined" && localStorage.getItem(trackKey)) {
-      return;
+    if (typeof window !== "undefined") {
+      if (localStorage.getItem(trackKey) || (window as any)[`__tracked_${orderId}`]) {
+        return;
+      }
+      localStorage.setItem(trackKey, "true");
+      (window as any)[`__tracked_${orderId}`] = true;
     }
+
+    // 2. Clear cart once
+    clearCart();
 
     let order = initialOrder;
 
@@ -73,10 +77,6 @@ export function PurchaseTracker({ order: initialOrder, orderId }: PurchaseTracke
         })),
         created_at: new Date().toISOString(),
       };
-    }
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem(trackKey, "true");
     }
 
     // Format phone to E.164 for advanced matching
@@ -135,7 +135,8 @@ export function PurchaseTracker({ order: initialOrder, orderId }: PurchaseTracke
         localStorage.removeItem("cb_pending_order");
       }
     } catch {}
-  }, [clearCart, initialOrder, orderId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
 
   return null;
 }

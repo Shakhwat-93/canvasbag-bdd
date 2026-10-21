@@ -137,11 +137,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 n=f.fbq=function(){
                   var args = Array.prototype.slice.call(arguments);
                   var cmd = args[0];
-                  // Guard 1: Allow re-init only if passing new user data (Advanced Matching), block duplicate empty inits
+                  // Guard 1: Allow init only once per pixel ID
                   if (cmd === 'init') {
                     var pid = args[1];
-                    var userData = args[2];
-                    if (f.__cb_inited_pixels && f.__cb_inited_pixels[pid] && !userData) {
+                    if (f.__cb_inited_pixels && f.__cb_inited_pixels[pid]) {
                       return;
                     }
                     f.__cb_inited_pixels = f.__cb_inited_pixels || {};
@@ -162,6 +161,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 t.src=v;s=b.getElementsByTagName(e)[0];
                 s.parentNode.insertBefore(t,s);
               }(window, document,'script', 'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('set', 'autoConfig', false, '${pixelId}');
               fbq('init', '${pixelId}');
               `
                   : ""
