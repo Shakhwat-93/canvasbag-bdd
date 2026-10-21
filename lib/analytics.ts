@@ -111,11 +111,28 @@ async function dispatchServerEvent(params: {
   }
 
   try {
-    const testCode = sessionStorage.getItem("fb_test_code") || undefined;
+    const getCookie = (name: string) => {
+      if (typeof document === "undefined") return undefined;
+      const match = document.cookie.match(new RegExp("(^|;\\s*)" + name + "=([^;]*)"));
+      return match ? decodeURIComponent(match[2]) : undefined;
+    };
+    const clientFbp = getCookie("_fbp");
+    const clientFbc = getCookie("_fbc");
+    const testCode =
+      (typeof sessionStorage !== "undefined" ? sessionStorage.getItem("fb_test_code") : null) ||
+      getCookie("fb_test_code") ||
+      undefined;
+
+    const mergedUserData = {
+      fbp: clientFbp,
+      fbc: clientFbc,
+      ...params.userData,
+    };
+
     fetch("/api/analytics/capi", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...params, testCode }),
+      body: JSON.stringify({ ...params, userData: mergedUserData, testCode }),
       keepalive: true,
     }).catch((err) => {
       console.warn("[Analytics] CAPI background dispatch failed:", err);

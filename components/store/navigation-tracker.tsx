@@ -4,10 +4,13 @@ import { useEffect, useRef, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { trackPageView } from "@/lib/analytics";
 
+// Module-level tracking state survives React component unmounts and remounts
+let globalLastTrackedPath: string | null = null;
+let globalLastTrackedTime = 0;
+
 function NavigationTrackerInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const lastTrackedPath = useRef<string | null>(null);
 
   useEffect(() => {
     // 1. Capture test code from URL without affecting route deduplication
@@ -17,9 +20,13 @@ function NavigationTrackerInner() {
       document.cookie = `fb_test_code=${encodeURIComponent(tc.trim())}; path=/; max-age=7200; SameSite=Lax`;
     }
 
-    // 2. Deduplicate strictly by pathname to avoid double firing when query params change or hydrate
-    if (!pathname || lastTrackedPath.current === pathname) return;
-    lastTrackedPath.current = pathname;
+    // 2. Deduplicate strictly by pathname with global lock to avoid double firing when query params change or hydrate
+    const now = Date.now();
+    if (!pathname || (globalLastTrackedPath === pathname && now - globalLastTrackedTime < 3000)) {
+      return;
+    }
+    globalLastTrackedPath = pathname;
+    globalLastTrackedTime = now;
 
     trackPageView(pathname);
   }, [pathname, searchParams]);

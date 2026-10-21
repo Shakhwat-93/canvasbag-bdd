@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendMetaServerEvent } from "@/lib/meta-capi";
 
+// Server-side memory cache for duplicate CAPI request suppression (TTL: 60s)
+const processedServerEvents = new Map<string, number>();
+
+function isDuplicateServerEvent(key: string, ttlMs = 15000): boolean {
+  const now = Date.now();
+  if (processedServerEvents.size > 2000) {
+    for (const [k, timestamp] of processedServerEvents.entries()) {
+      if (now - timestamp > 60000) {
+        processedServerEvents.delete(k);
+      }
+    }
+  }
+
+  const lastSeen = processedServerEvents.get(key);
+  if (lastSeen && now - lastSeen < ttlMs) {
+    return true;
+  }
+  processedServerEvents.set(key, now);
+  return false;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -16,6 +37,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing eventName or eventId" }, { status: 400 });
     }
 
+    // 1. Idempotency Check: Suppress repeated requests with the exact same eventId
+    if (isDuplicateServerEvent(`id_${eventId}`, 30000)) {
+      console.log(`[CAPI Server] Suppressed duplicate eventId: ${eventId}`);
+      return NextResponse.json({ success: true, deduplicated: true, eventId });
+    }
+
     // Extract request headers and cookies for high-match-quality CAPI attribution
     const forwardedFor = req.headers.get("x-forwarded-for");
     let ip = forwardedFor ? forwardedFor.split(",")[0].trim() : req.headers.get("x-real-ip") || undefined;
@@ -29,6 +56,17 @@ export async function POST(req: NextRequest) {
       shouldSetFbpCookie = true;
     }
     const fbc = req.cookies.get("_fbc")?.value || userData.fbc;
+
+    // 2. High-frequency PageView burst suppression (e.g. from rapid reloads, concurrent tabs, or hydration double-fires)
+    if (eventName === "PageView") {
+      const clientIdentifier = fbp || ip || "anon";
+      const normalizedPath = (eventSourceUrl || "").split("?")[0].replace(/\/+$/, "") || "/";
+      const pvKey = `pv_${clientIdentifier}_${normalizedPath}`;
+      if (isDuplicateServerEvent(pvKey, 3000)) {
+        console.log(`[CAPI Server] Suppressed duplicate PageView burst for ${clientIdentifier} on ${normalizedPath}`);
+        return NextResponse.json({ success: true, deduplicated: true, eventId });
+      }
+    }
 
     const mergedUserData = {
       country: "bd",
