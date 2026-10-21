@@ -10,6 +10,12 @@ function NavigationTrackerInner() {
   const lastTrackedPath = useRef<string | null>(null);
 
   useEffect(() => {
+    const tc = searchParams?.get("test_event_code") || searchParams?.get("fb_test_code");
+    if (tc && typeof window !== "undefined") {
+      sessionStorage.setItem("fb_test_code", tc.trim());
+      document.cookie = `fb_test_code=${encodeURIComponent(tc.trim())}; path=/; max-age=7200; SameSite=Lax`;
+    }
+
     const searchString = searchParams?.toString();
     const fullPath = searchString ? `${pathname}?${searchString}` : pathname;
 

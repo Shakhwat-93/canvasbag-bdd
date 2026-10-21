@@ -81,7 +81,9 @@ export async function sendMetaServerEvent(params: MetaServerEventParams): Promis
       formattedUserData.external_id = [sha256(phoneFormatted)];
     }
 
-    if (u.ip) formattedUserData.client_ip_address = u.ip;
+    if (u.ip && u.ip !== "127.0.0.1" && u.ip !== "::1" && !u.ip.startsWith("192.168.") && !u.ip.startsWith("10.") && !u.ip.startsWith("172.")) {
+      formattedUserData.client_ip_address = u.ip;
+    }
     if (u.userAgent) formattedUserData.client_user_agent = u.userAgent;
     if (u.fbp) formattedUserData.fbp = u.fbp;
     if (u.fbc) formattedUserData.fbc = u.fbc;
