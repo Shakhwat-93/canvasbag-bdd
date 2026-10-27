@@ -92,6 +92,30 @@ function safeFbqTrack(
 }
 
 /**
+ * Safe gtag invoker that queues events into window.dataLayer
+ * even before gtag.js script finishes downloading.
+ */
+function safeGtag(command: string, action: string, params?: Record<string, any>) {
+  if (typeof window === "undefined") return;
+  window.dataLayer = window.dataLayer || [];
+  if (typeof window.gtag === "function") {
+    try {
+      window.gtag(command, action, params);
+      console.log(
+        `%c[GA4] Tracked ${action}`,
+        "color: #E37400; font-weight: bold;",
+        params
+      );
+    } catch (err) {
+      console.warn("[GA4] Error firing gtag:", err);
+    }
+  } else {
+    // If gtag.js is still loading, queue into dataLayer the standard Google way
+    (window.dataLayer as any).push([command, action, params]);
+  }
+}
+
+/**
  * Dispatch event to internal server-side Conversions API proxy
  */
 async function dispatchServerEvent(params: {
@@ -172,13 +196,11 @@ export function trackPageView(pagePath?: string) {
   });
 
   // 2. Google Analytics 4 (GA4)
-  if (typeof window.gtag === "function") {
-    window.gtag("event", "page_view", {
-      page_path: currentPath,
-      page_location: fullUrl,
-      page_title: pageTitle,
-    });
-  }
+  safeGtag("event", "page_view", {
+    page_path: currentPath,
+    page_location: fullUrl,
+    page_title: pageTitle,
+  });
 
   // 3. Meta Pixel (fbq) & Server CAPI with single matching eventId
   const eventId = `pv_${now}_${Math.random().toString(36).substring(2, 7)}`;
@@ -280,22 +302,20 @@ export function trackClientEvent(name: string, payload: Record<string, any> = {}
   window.dataLayer.push(gtmPayload);
 
   // 3. Google Analytics 4 (gtag.js) direct tracking
-  if (typeof window.gtag === "function") {
-    const gtagPayload: Record<string, any> = {
-      currency: "BDT",
-      value: payload.value,
-      items: payload.items || [],
-    };
+  const gtagPayload: Record<string, any> = {
+    currency: "BDT",
+    value: payload.value,
+    items: payload.items || [],
+  };
 
-    if (name === "purchase") {
-      gtagPayload.transaction_id = payload.order_id;
-      gtagPayload.shipping = payload.shipping_cost;
-    } else if (name === "add_shipping_info") {
-      gtagPayload.shipping_tier = payload.shipping_zone;
-    }
-
-    window.gtag("event", name, gtagPayload);
+  if (name === "purchase") {
+    gtagPayload.transaction_id = payload.order_id;
+    gtagPayload.shipping = payload.shipping_cost;
+  } else if (name === "add_shipping_info") {
+    gtagPayload.shipping_tier = payload.shipping_zone;
   }
+
+  safeGtag("event", name, gtagPayload);
 
   // 4. Meta Pixel (fbq) & Server-Side CAPI tracking with full standard parameters
   const pixelNameMap: Record<string, string> = {
