@@ -100,7 +100,11 @@ function safeGtag(command: string, action: string, params?: Record<string, any>)
   window.dataLayer = window.dataLayer || [];
   if (typeof window.gtag === "function") {
     try {
-      window.gtag(command, action, params);
+      if (params) {
+        window.gtag(command, action, params);
+      } else {
+        window.gtag(command, action);
+      }
       console.log(
         `%c[GA4] Tracked ${action}`,
         "color: #E37400; font-weight: bold;",
@@ -111,10 +115,15 @@ function safeGtag(command: string, action: string, params?: Record<string, any>)
     }
   } else {
     // Define standard Google gtag queue handler if not present yet
-    window.gtag = function () {
+    const gtagQueue = function (..._args: any[]) {
       (window.dataLayer = window.dataLayer || []).push(arguments);
     };
-    window.gtag(command, action, params);
+    window.gtag = gtagQueue;
+    if (params) {
+      gtagQueue(command, action, params);
+    } else {
+      gtagQueue(command, action);
+    }
   }
 }
 

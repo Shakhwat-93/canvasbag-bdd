@@ -216,19 +216,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Google Analytics 4 (gtag.js) */}
         {ga4Id && (
           <>
-            <script
-              async
+            <Script
+              id="ga4-script"
+              strategy="afterInteractive"
               src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`}
             />
-            <script
+            <Script
               id="ga4-init"
+              strategy="afterInteractive"
               dangerouslySetInnerHTML={{
                 __html: `
                   window.dataLayer = window.dataLayer || [];
                   function gtag(){dataLayer.push(arguments);}
                   window.gtag = gtag;
                   gtag('js', new Date());
-                  gtag('config', '${ga4Id}');
+                  gtag('config', '${ga4Id}', {
+                    send_page_view: false
+                  });
                 `,
               }}
             />
