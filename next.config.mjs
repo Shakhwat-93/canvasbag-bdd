@@ -5,6 +5,7 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     qualities: [75, 85, 90, 95],
+    minimumCacheTTL: 86400,
     remotePatterns: [
       {
         protocol: 'https',

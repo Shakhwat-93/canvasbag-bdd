@@ -77,9 +77,10 @@ export function OriginHeroSlider({ settings = {} }: OriginHeroSliderProps) {
                   src={slide.image}
                   alt={slide.alt}
                   fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1536px) 100vw, 1728px"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1536px"
                   priority={idx === 0}
                   loading={idx === 0 ? "eager" : "lazy"}
+                  fetchPriority={idx === 0 ? "high" : "auto"}
                   className="object-cover object-center w-full h-full"
                 />
               </Link>

@@ -92,6 +92,7 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
                   alt="CanvasBag Logo"
                   width={36}
                   height={36}
+                  priority
                   className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
                   unoptimized
                 />
@@ -126,6 +127,7 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
                 alt="CanvasBag Logo"
                 width={38}
                 height={38}
+                priority
                 className="h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
                 unoptimized
               />

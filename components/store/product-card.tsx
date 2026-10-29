@@ -90,8 +90,8 @@ export function ProductCard({ product }: ProductCardProps) {
             src={validVariantImage}
             alt={product.name}
             fill
-            quality={85}
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 400px"
+            quality={75}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
             className="object-contain p-2 transition-transform duration-200"
           />
 

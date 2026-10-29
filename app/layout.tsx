@@ -1,10 +1,35 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Poppins, Hind_Siliguri, Outfit } from "next/font/google";
 import { Toaster } from "sonner";
 import { CartProvider } from "@/components/providers/cart-provider";
 import { NavigationTracker } from "@/components/store/navigation-tracker";
 import { supabaseCatalogService } from "@/lib/supabase";
 import "./globals.css";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-poppins",
+  display: "swap",
+  preload: true,
+});
+
+const hindSiliguri = Hind_Siliguri({
+  subsets: ["bengali", "latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-hind-siliguri",
+  display: "swap",
+  preload: false,
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
+  variable: "--font-outfit",
+  display: "swap",
+  preload: false,
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://canvasbagbd.com"),
@@ -60,23 +85,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const themeCss = `:root { --primary: ${primary}; --primary-gradient: ${gradient}; --primary-foreground: ${foreground}; --primary-hover: #e55520; --price-color: #12b76a; --badge-color: #000000; }`;
 
   return (
-    <html lang="bn" suppressHydrationWarning>
+    <html
+      lang="bn"
+      suppressHydrationWarning
+      className={`${poppins.variable} ${hindSiliguri.variable} ${outfit.variable}`}
+    >
       <head>
-        {/* Google Fonts */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-
         {/* Server-Injected Theme Variables */}
         <style id="theme-variables" dangerouslySetInnerHTML={{ __html: themeCss }} />
 
         {/* Theme Engine Runtime Script for Live Admin Previews */}
         <Script
           id="theme-engine-runtime"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
