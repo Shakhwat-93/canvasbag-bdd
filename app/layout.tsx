@@ -82,7 +82,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const savedTheme = settings.themeColor || "gradient:#ff804e,#ff6b35,light";
 
   const { primary, gradient, foreground } = getThemeStyles(savedTheme);
-  const themeCss = `:root { --primary: ${primary}; --primary-gradient: ${gradient}; --primary-foreground: ${foreground}; --primary-hover: #e55520; --price-color: #12b76a; --badge-color: #000000; }`;
+  const themeCss = `:root { --primary: ${primary}; --primary-gradient: ${gradient}; --primary-foreground: ${foreground}; --primary-hover: #e55520; --price-color: #047857; --badge-color: #000000; }`;
 
   return (
     <html
@@ -91,6 +91,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={`${poppins.variable} ${hindSiliguri.variable} ${outfit.variable}`}
     >
       <head>
+        {/* Preconnect to High-Priority Asset Origins */}
+        <link rel="preconnect" href="https://pub-c87cf7c070ae4a08a702a89ea3340662.r2.dev" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://pub-c87cf7c070ae4a08a702a89ea3340662.r2.dev" />
+
         {/* Server-Injected Theme Variables */}
         <style id="theme-variables" dangerouslySetInnerHTML={{ __html: themeCss }} />
 
@@ -127,7 +131,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     foreground = fgType === "dark" ? "#111827" : "#ffffff";
                   }
 
-                  const css = ":root { --primary: " + primary + "; --primary-gradient: " + gradient + "; --primary-foreground: " + foreground + "; --primary-hover: #e55520; --price-color: #12b76a; --badge-color: #000000; }";
+                  const css = ":root { --primary: " + primary + "; --primary-gradient: " + gradient + "; --primary-foreground: " + foreground + "; --primary-hover: #e55520; --price-color: #047857; --badge-color: #000000; }";
                   let styleEl = document.getElementById("theme-variables");
                   if (!styleEl) {
                     styleEl = document.createElement("style");
@@ -235,6 +239,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {gtmId && (
           <noscript>
             <iframe
+              title="Google Tag Manager"
               src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
               height="0"
               width="0"

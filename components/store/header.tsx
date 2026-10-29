@@ -96,8 +96,8 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
                   className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
                   unoptimized
                 />
-                <span className="text-lg font-black tracking-tight text-slate-900 group-hover:text-[#ff6b35] transition-colors">
-                  Canvas<span className="text-[#ff6b35]">Bag</span>
+                <span className="text-lg font-black tracking-tight text-slate-900 group-hover:text-[#c2410c] transition-colors">
+                  Canvas<span className="text-[#c2410c]">Bag</span>
                 </span>
               </Link>
             </div>
@@ -131,8 +131,8 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
                 className="h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
                 unoptimized
               />
-              <span className="text-xl font-black tracking-tight text-slate-900 group-hover:text-[#ff6b35] transition-colors">
-                Canvas<span className="text-[#ff6b35]">Bag</span>
+              <span className="text-xl font-black tracking-tight text-slate-900 group-hover:text-[#c2410c] transition-colors">
+                Canvas<span className="text-[#c2410c]">Bag</span>
               </span>
             </Link>
 
@@ -208,13 +208,13 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
           <nav className="hidden md:flex items-center gap-6 pb-3 text-sm font-medium border-t border-gray-50 pt-2.5">
             <Link
               href="/"
-              className={`transition-colors ${pathname === "/" ? "text-[#ff6b35] font-bold" : "text-[#374151] hover:text-[#ff6b35]"}`}
+              className={`transition-colors ${pathname === "/" ? "text-[#c2410c] font-bold" : "text-[#374151] hover:text-[#c2410c]"}`}
             >
               হোম
             </Link>
             <Link
               href="/shop"
-              className={`transition-colors ${pathname === "/shop" ? "text-[#ff6b35] font-bold" : "text-[#374151] hover:text-[#ff6b35]"}`}
+              className={`transition-colors ${pathname === "/shop" ? "text-[#c2410c] font-bold" : "text-[#374151] hover:text-[#c2410c]"}`}
             >
               শপ
             </Link>
@@ -277,13 +277,13 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
 
             <Link
               href="/cart"
-              className={`transition-colors ${pathname === "/cart" ? "text-[#ff6b35] font-bold" : "text-[#374151] hover:text-[#ff6b35]"}`}
+              className={`transition-colors ${pathname === "/cart" ? "text-[#c2410c] font-bold" : "text-[#374151] hover:text-[#c2410c]"}`}
             >
               কার্ট
             </Link>
             <Link
               href="/track"
-              className={`transition-colors ${pathname === "/track" ? "text-[#ff6b35] font-bold" : "text-[#374151] hover:text-[#ff6b35]"}`}
+              className={`transition-colors ${pathname === "/track" ? "text-[#c2410c] font-bold" : "text-[#374151] hover:text-[#c2410c]"}`}
             >
               অর্ডার ট্র্যাক
             </Link>
@@ -316,8 +316,8 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
                     className="h-7 w-auto object-contain transition-transform group-hover:scale-105"
                     unoptimized
                   />
-                  <span className="text-lg font-black tracking-tight text-slate-900 group-hover:text-[#ff6b35] transition-colors">
-                    Canvas<span className="text-[#ff6b35]">Bag</span>
+                  <span className="text-lg font-black tracking-tight text-slate-900 group-hover:text-[#c2410c] transition-colors">
+                    Canvas<span className="text-[#c2410c]">Bag</span>
                   </span>
                 </Link>
                 <button

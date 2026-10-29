@@ -52,8 +52,8 @@ export default async function HomePage() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Flame className="w-5 h-5 text-[#ff6b35]" />
-                <span className="text-xs sm:text-sm font-semibold text-[#ff6b35] uppercase tracking-wider">
+                <Flame className="w-5 h-5 text-[#c2410c]" />
+                <span className="text-xs sm:text-sm font-semibold text-[#c2410c] uppercase tracking-wider">
                   বেস্ট সেলার
                 </span>
               </div>
@@ -64,7 +64,7 @@ export default async function HomePage() {
 
             <Link
               href="/shop"
-              className="flex items-center gap-1 text-sm font-bold text-[#ff6b35] hover:text-[#e55520] transition-colors group"
+              className="flex items-center gap-1 text-sm font-bold text-[#c2410c] hover:text-[#9a3412] transition-colors group"
             >
               <span>সব দেখুন</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

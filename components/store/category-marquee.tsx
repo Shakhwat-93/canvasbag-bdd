@@ -23,8 +23,8 @@ export function CategoryMarquee({ categories = [] }: CategoryMarqueeProps) {
         {/* Section Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 mb-3 bg-[#fff3ef] px-4 py-1.5 rounded-full border border-[#ff6b35]/10">
-            <Grid2X2 className="w-4 h-4 text-[#ff6b35]" />
-            <span className="text-xs font-bold text-[#ff6b35] uppercase tracking-wider">
+            <Grid2X2 className="w-4 h-4 text-[#c2410c]" />
+            <span className="text-xs font-bold text-[#c2410c] uppercase tracking-wider">
               ক্যাটাগরি
             </span>
           </div>

@@ -40,7 +40,7 @@ export function ReviewsSection({ reviews = [] }: ReviewsSectionProps) {
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Star className="w-5 h-5 fill-[#f59e0b] text-[#f59e0b]" />
-            <span className="text-xs font-bold text-[#ff6b35] uppercase tracking-wider">
+            <span className="text-xs font-bold text-[#c2410c] uppercase tracking-wider">
               গ্রাহক রিভিউ
             </span>
           </div>

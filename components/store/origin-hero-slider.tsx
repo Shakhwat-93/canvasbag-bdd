@@ -42,13 +42,35 @@ export function OriginHeroSlider({ settings = {} }: OriginHeroSliderProps) {
   const slides = configuredList;
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Mount background slides only when main-thread and network are idle
+    let idleHandle: number | undefined;
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      idleHandle = (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(() => {
+        setMounted(true);
+      });
+    } else {
+      timeoutHandle = setTimeout(() => {
+        setMounted(true);
+      }, 2500);
+    }
+
     if (slides.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(interval);
+    }, 6000);
+
+    return () => {
+      clearInterval(interval);
+      if (idleHandle !== undefined && typeof window !== "undefined" && "cancelIdleCallback" in window) {
+        (window as unknown as { cancelIdleCallback: (h: number) => void }).cancelIdleCallback(idleHandle);
+      }
+      if (timeoutHandle) clearTimeout(timeoutHandle);
+    };
   }, [slides.length]);
 
   if (slides.length === 0) return null;
@@ -65,27 +87,33 @@ export function OriginHeroSlider({ settings = {} }: OriginHeroSliderProps) {
     <section className="bg-[#fafaf9]">
       <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <div className="relative w-full aspect-[16/9] md:aspect-[21/9] 2xl:aspect-[24/9] bg-[#111111] rounded-2xl md:rounded-[24px] border border-gray-200 shadow-md overflow-hidden group">
-          {slides.map((slide, idx) => (
-            <div
-              key={idx}
-              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                idx === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-              }`}
-            >
-              <Link href={slide.link} className="block w-full h-full relative">
-                <Image
-                  src={slide.image}
-                  alt={slide.alt}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1536px"
-                  priority={idx === 0}
-                  loading={idx === 0 ? "eager" : "lazy"}
-                  fetchPriority={idx === 0 ? "high" : "auto"}
-                  className="object-cover object-center w-full h-full"
-                />
-              </Link>
-            </div>
-          ))}
+          {slides.map((slide, idx) => {
+            // Render only the LCP hero slide on SSR / initial paint; mount subsequent slides post-hydration
+            if (idx !== 0 && !mounted) return null;
+
+            return (
+              <div
+                key={idx}
+                className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                  idx === currentIndex ? "opacity-100 z-10 visible" : "opacity-0 z-0 pointer-events-none invisible"
+                }`}
+              >
+                <Link href={slide.link} className="block w-full h-full relative">
+                  <Image
+                    src={slide.image}
+                    alt={slide.alt}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, (max-width: 1536px) 1280px, 1536px"
+                    priority={idx === 0}
+                    loading={idx === 0 ? "eager" : "lazy"}
+                    fetchPriority={idx === 0 ? "high" : "auto"}
+                    quality={75}
+                    className="object-cover object-center w-full h-full"
+                  />
+                </Link>
+              </div>
+            );
+          })}
 
           {/* Left / Right Hover Buttons */}
           {slides.length > 1 && (
@@ -111,19 +139,23 @@ export function OriginHeroSlider({ settings = {} }: OriginHeroSliderProps) {
 
           {/* Bottom Dot Indicators */}
           {slides.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1">
               {slides.map((_, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => setCurrentIndex(idx)}
-                  className={`rounded-full transition-all duration-300 cursor-pointer ${
-                    idx === currentIndex
-                      ? "w-6 h-2.5 md:w-8 md:h-3 bg-[#ff6b35] scale-105"
-                      : "w-2.5 h-2.5 md:w-3 md:h-3 bg-white/60 hover:bg-white"
-                  }`}
+                  className="p-2 min-w-[28px] min-h-[28px] flex items-center justify-center cursor-pointer"
                   aria-label={`Go to slide ${idx + 1}`}
-                />
+                >
+                  <span
+                    className={`block rounded-full transition-all duration-300 ${
+                      idx === currentIndex
+                        ? "w-6 h-2.5 md:w-8 md:h-3 bg-[#ff6b35] scale-105"
+                        : "w-2.5 h-2.5 md:w-3 md:h-3 bg-white/60 hover:bg-white"
+                    }`}
+                  />
+                </button>
               ))}
             </div>
           )}

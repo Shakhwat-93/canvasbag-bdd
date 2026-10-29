@@ -29,8 +29,8 @@ export function Footer({ categories = [], settings = {} }: FooterProps) {
                 className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
                 unoptimized
               />
-              <span className="text-xl font-black tracking-tight text-slate-900 group-hover:text-[#ff6b35] transition-colors">
-                Canvas<span className="text-[#ff6b35]">Bag</span>
+              <span className="text-xl font-black tracking-tight text-slate-900 group-hover:text-[#c2410c] transition-colors">
+                Canvas<span className="text-[#c2410c]">Bag</span>
               </span>
             </Link>
             <p className="text-sm leading-relaxed mb-4 text-gray-500">
@@ -181,7 +181,7 @@ export function Footer({ categories = [], settings = {} }: FooterProps) {
           <p>© ২০২৬ CanvasBag. সর্বস্বত্ব সংরক্ষিত।</p>
           <div className="flex items-center gap-1">
             <span>Powered by</span>
-            <Link href="/" className="text-[#ff6b35] font-semibold hover:underline">
+            <Link href="/" className="text-[#c2410c] font-semibold hover:underline">
               CanvasBag
             </Link>
           </div>

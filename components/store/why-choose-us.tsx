@@ -40,7 +40,7 @@ export function WhyChooseUs() {
       <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-10">
-          <span className="text-xs font-bold text-[#ff6b35] uppercase tracking-wider bg-[#fff3ef] px-3.5 py-1 rounded-full border border-[#ff6b35]/15">
+          <span className="text-xs font-bold text-[#c2410c] uppercase tracking-wider bg-[#fff3ef] px-3.5 py-1 rounded-full border border-[#c2410c]/20">
             WHY CHOOSE US
           </span>
           <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mt-3 tracking-tight">

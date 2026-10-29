@@ -106,7 +106,7 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
 
           {/* Limited Stock Badge */}
-          <div className="absolute top-2 right-2 bg-[#ef4444] text-white text-xs font-bold px-2 py-1 rounded-lg shadow-xs">
+          <div className="absolute top-2 right-2 bg-[#dc2626] text-white text-xs font-bold px-2 py-1 rounded-lg shadow-xs">
             {isOutOfStock ? "স্টক শেষ" : "সীমিত"}
           </div>
         </div>
@@ -118,7 +118,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </p>
           <div className="flex items-center gap-2">
             <span
-              style={{ color: "var(--price-color, #12b76a)" }}
+              style={{ color: "var(--price-color, #047857)" }}
               className="text-base font-bold"
             >
               {formatBDT(product.price)}
