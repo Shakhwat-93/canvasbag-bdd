@@ -206,6 +206,7 @@ export function FloatingContact({ settings = {} }: FloatingContactProps) {
             type="button"
             onClick={() => setIsChatOpen(false)}
             className="text-white/70 hover:text-white p-1 hover:bg-white/10 rounded-full transition-colors cursor-pointer"
+            aria-label="Close Chat"
           >
             <X className="w-5 h-5" />
           </button>
@@ -231,6 +232,7 @@ export function FloatingContact({ settings = {} }: FloatingContactProps) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="আপনার নাম লিখুন..."
+              aria-label="আপনার নাম"
               className="w-full h-9 px-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--primary)] bg-slate-50/50 font-semibold text-slate-800"
             />
           </div>
@@ -241,6 +243,7 @@ export function FloatingContact({ settings = {} }: FloatingContactProps) {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="মোবাইল নাম্বার (০১XXXXXXXXX)..."
+              aria-label="মোবাইল নাম্বার"
               className="w-full h-9 px-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--primary)] bg-slate-50/50 font-semibold text-slate-800"
             />
           </div>
@@ -251,6 +254,7 @@ export function FloatingContact({ settings = {} }: FloatingContactProps) {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="আপনার বার্তাটি লিখুন..."
+              aria-label="আপনার বার্তা"
               className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--primary)] bg-slate-50/50 font-semibold resize-none text-slate-800"
             />
           </div>

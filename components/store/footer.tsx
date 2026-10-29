@@ -119,13 +119,13 @@ export function Footer({ categories = [], settings = {} }: FooterProps) {
                 </Link>
               </li>
               <li>
-                <span className="text-gray-400 cursor-not-allowed">রিটার্ন ও রিফান্ড পলিসি</span>
+                <span className="text-gray-500 cursor-not-allowed">রিটার্ন ও রিফান্ড পলিসি</span>
               </li>
               <li>
-                <span className="text-gray-400 cursor-not-allowed">প্রাইভেসি পলিসি</span>
+                <span className="text-gray-500 cursor-not-allowed">প্রাইভেসি পলিসি</span>
               </li>
               <li>
-                <span className="text-gray-400 cursor-not-allowed">শর্তাবলী</span>
+                <span className="text-gray-500 cursor-not-allowed">শর্তাবলী</span>
               </li>
             </ul>
           </div>
@@ -138,7 +138,7 @@ export function Footer({ categories = [], settings = {} }: FooterProps) {
                 <Phone className="w-4 h-4 text-[#ff6b35] mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-gray-800 font-semibold">{displayPhone}</p>
-                  <p className="text-xs text-gray-400">সকাল ১০টা — রাত ৯টা</p>
+                  <p className="text-xs text-gray-500">সকাল ১০টা — রাত ৯টা</p>
                 </div>
               </li>
               <li className="flex items-start gap-3">

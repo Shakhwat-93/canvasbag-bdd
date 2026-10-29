@@ -148,15 +148,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
-              window.gtag = function(){window.dataLayer.push(arguments);};
-              ${
-                ga4Id
-                  ? `
-              window.gtag('js', new Date());
-              window.gtag('config', '${ga4Id}', { send_page_view: false });
-              `
-                  : ""
-              }
+              window.gtag = window.gtag || function(){window.dataLayer.push(arguments);};
               window.fbTestCode = "${fbTestCode}";
               window._fbPixelId = "${pixelId}";
               ${
@@ -217,13 +209,26 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           />
         )}
 
-        {/* GA4 Remote Library */}
+        {/* Google Analytics 4 (gtag.js) */}
         {ga4Id && (
-          <Script
-            id="ga4-script"
-            src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`}
-            strategy="afterInteractive"
-          />
+          <>
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`}
+            />
+            <script
+              id="ga4-init"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  window.gtag = gtag;
+                  gtag('js', new Date());
+                  gtag('config', '${ga4Id}');
+                `,
+              }}
+            />
+          </>
         )}
       </head>
       <body suppressHydrationWarning className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden text-slate-800 antialiased font-poppins selection:bg-[var(--primary)] selection:text-[var(--primary-foreground)]">

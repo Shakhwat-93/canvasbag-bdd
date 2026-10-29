@@ -110,8 +110,11 @@ function safeGtag(command: string, action: string, params?: Record<string, any>)
       console.warn("[GA4] Error firing gtag:", err);
     }
   } else {
-    // If gtag.js is still loading, queue into dataLayer the standard Google way
-    (window.dataLayer as any).push([command, action, params]);
+    // Define standard Google gtag queue handler if not present yet
+    window.gtag = function () {
+      (window.dataLayer = window.dataLayer || []).push(arguments);
+    };
+    window.gtag(command, action, params);
   }
 }
 

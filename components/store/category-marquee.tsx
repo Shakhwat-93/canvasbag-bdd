@@ -12,7 +12,10 @@ export function CategoryMarquee({ categories = [] }: CategoryMarqueeProps) {
   if (categories.length === 0) return null;
 
   // Repeat items so that marquee smoothly loops continuously
-  const displayItems = [...categories, ...categories, ...categories];
+  const displayItems =
+    categories.length >= 8
+      ? [...categories, ...categories]
+      : [...categories, ...categories, ...categories];
 
   return (
     <section id="categories" className="py-10 md:py-16 bg-[#fcfdfe] overflow-hidden">

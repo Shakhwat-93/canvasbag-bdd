@@ -240,7 +240,19 @@ export async function getCatalogProducts(opts?: CatalogQueryOptions): Promise<Pr
     if (res.ok) {
       const rows = await res.json();
       if (Array.isArray(rows)) {
-        const products = rows.map((r: any) => r.data).filter(Boolean);
+        const products = rows
+          .map((r: any) => {
+            const d = r.data;
+            if (!d) return null;
+            if (typeof d.image === "string" && (d.image.startsWith("data:") || d.image.length > 2048)) {
+              d.image = "";
+            }
+            if (typeof d.imageUrl === "string" && (d.imageUrl.startsWith("data:") || d.imageUrl.length > 2048)) {
+              d.imageUrl = "";
+            }
+            return d;
+          })
+          .filter(Boolean);
         if (products.length > 0) {
           memoryProductCache = {
             data: products as Product[],
@@ -357,7 +369,16 @@ export async function getCatalogCategories(opts?: CatalogQueryOptions): Promise<
     if (res.ok) {
       const rows = await res.json();
       if (Array.isArray(rows)) {
-        const categories = rows.map((r: any) => r.data).filter(Boolean);
+        const categories = rows
+          .map((r: any) => {
+            const d = r.data;
+            if (!d) return null;
+            if (typeof d.image === "string" && (d.image.startsWith("data:") || d.image.length > 2048)) {
+              d.image = "";
+            }
+            return d;
+          })
+          .filter(Boolean);
         if (categories.length > 0) {
           memoryCategoriesCache = {
             data: categories as Category[],

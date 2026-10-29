@@ -47,12 +47,12 @@ export function calculateOrderTotals(
 export function isValidImageUrl(url: unknown): boolean {
   if (typeof url !== "string") return false;
   const trimmed = url.trim();
-  if (!trimmed || trimmed === "null" || trimmed === "undefined") return false;
+  if (!trimmed || trimmed === "null" || trimmed === "undefined" || trimmed.length > 2048) return false;
+  if (trimmed.startsWith("data:")) return false;
   return (
     trimmed.startsWith("/") ||
     trimmed.startsWith("http://") ||
-    trimmed.startsWith("https://") ||
-    trimmed.startsWith("data:image/")
+    trimmed.startsWith("https://")
   );
 }
 

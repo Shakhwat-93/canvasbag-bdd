@@ -144,6 +144,7 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="পণ্য খুঁজুন..."
+                  aria-label="পণ্য খুঁজুন"
                   className="w-full pl-4 pr-12 py-2.5 border-2 border-[#e5e7eb] rounded-xl text-sm focus:border-[#ff6b35] focus:outline-none transition-colors text-black bg-white"
                 />
                 <button
@@ -190,6 +191,7 @@ export function Header({ categories = [], settings = {} }: HeaderProps) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="পণ্য খুঁজুন..."
+                aria-label="পণ্য খুঁজুন"
                 className="w-full pl-4 pr-12 py-2 border-2 border-[#e5e7eb] rounded-xl text-sm focus:border-[#ff6b35] focus:outline-none transition-colors text-black bg-white"
               />
               <button
