@@ -28,6 +28,7 @@ import {
   RefreshCw,
   Smartphone,
   Monitor,
+  Copy,
   Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +36,7 @@ import { useAdminAlert } from "@/components/admin/admin-alert-provider";
 import type { Category, Product, ProductVariant, ProductReview } from "@/lib/types";
 import { buildCategoryTree, flattenCategoryTree, slugifyCategory } from "@/lib/category-tree";
 import { MediaPickerModal } from "@/components/admin/media-picker-modal";
+import { DuplicateProductModal } from "@/components/admin/duplicate-product-modal";
 
 interface ProductFormProps {
   initialProduct?: Partial<Product>;
@@ -79,6 +81,7 @@ export function ProductForm({
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [mediaPickerTarget, setMediaPickerTarget] = useState<"gallery" | "variant">("gallery");
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const { confirmUnsaved, confirmDelete, alert: showAlert } = useAdminAlert();
 
   // Form State
@@ -595,6 +598,18 @@ export function ProductForm({
         </div>
 
         <div className="flex items-center gap-2.5">
+          {mode === "edit" && initialProduct && (
+            <button
+              type="button"
+              onClick={() => setShowDuplicateModal(true)}
+              className="px-3.5 py-2 border border-slate-200 hover:border-slate-300 bg-white rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all"
+              title="Duplicate this product (ডুপ্লিকেট করুন)"
+            >
+              <Copy className="w-3.5 h-3.5 text-[#ff6b35]" />
+              <span>Duplicate</span>
+            </button>
+          )}
+
           {mode === "edit" && product.slug && (
             <Link
               href={`/product/${product.slug}`}
@@ -2089,6 +2104,22 @@ export function ProductForm({
         title={mediaPickerTarget === "gallery" ? "Add to Product Gallery" : "Choose Variant Image"}
       />
 
+      {/* Duplicate Product Modal */}
+      {mode === "edit" && initialProduct && (
+        <DuplicateProductModal
+          isOpen={showDuplicateModal}
+          onClose={() => setShowDuplicateModal(false)}
+          product={{ ...initialProduct, ...product } as Product}
+          onSuccess={(duplicatedProduct, shouldRedirectToEdit) => {
+            if (shouldRedirectToEdit) {
+              router.push(`/admin/products/${duplicatedProduct.id}/edit`);
+            } else {
+              router.push("/admin/products");
+            }
+          }}
+        />
+      )}
+
       {/* Mobile Sticky Bottom Action Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3.5 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 flex items-center justify-between shadow-lg">
         <div className="min-w-0 pr-3">
@@ -2099,15 +2130,28 @@ export function ProductForm({
             {mode === "edit" ? "Editing existing product" : "Drafting new product"}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => handleSubmit()}
-          disabled={loading}
-          className="bg-slate-950 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-md active:scale-95 disabled:opacity-50 shrink-0"
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          <span>{mode === "edit" ? "Update" : "Publish"}</span>
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {mode === "edit" && initialProduct && (
+            <button
+              type="button"
+              onClick={() => setShowDuplicateModal(true)}
+              className="px-3 py-2.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-[#ff6b35] rounded-xl text-xs font-black flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
+              title="Duplicate product"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Copy</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => handleSubmit()}
+            disabled={loading}
+            className="bg-slate-950 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-md active:scale-95 disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            <span>{mode === "edit" ? "Update" : "Publish"}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

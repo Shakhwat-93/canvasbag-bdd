@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAdminAlert } from "@/components/admin/admin-alert-provider";
+import { DuplicateProductModal } from "@/components/admin/duplicate-product-modal";
 import type { Category, Product } from "@/lib/types";
 import { formatBDT } from "@/lib/format";
 
@@ -58,6 +59,7 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
 
   // Duplicate state
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const [duplicateModalProduct, setDuplicateModalProduct] = useState<Product | null>(null);
 
   // Status toggle state
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -230,30 +232,35 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
     }
   };
 
-  // Duplicate product
+  // Quick duplicate product
   const handleDuplicateProduct = async (p: Product) => {
     setDuplicatingId(p.id);
-    const newSlug = `${p.slug}-copy-${Date.now().toString().slice(-4)}`;
-    const duplicatedProduct: Partial<Product> = {
-      ...p,
-      id: `prod-${Date.now()}`,
-      name: `${p.name} (Copy)`,
-      slug: newSlug,
-      status: "draft",
-      created_at: new Date().toISOString(),
-    };
 
     try {
-      const res = await fetch("/api/admin/product", {
+      const res = await fetch("/api/admin/product/duplicate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product: duplicatedProduct }),
+        body: JSON.stringify({
+          sourceId: p.id,
+          name: `${p.name} (Copy)`,
+          status: "draft",
+          copyImages: true,
+          copyVariants: true,
+        }),
       });
 
       const data = await res.json();
-      if (data.success) {
-        setProducts((prev) => [data.product || (duplicatedProduct as Product), ...prev]);
-        toast.success(`Duplicated "${p.name}" as draft`);
+      if (data.success && data.product) {
+        setProducts((prev) => [data.product, ...prev]);
+        if (statusFilter === "active") {
+          setStatusFilter("all");
+        }
+        toast.success(`"${data.product.name}" সফলভাবে ডুপ্লিকেট হয়েছে!`, {
+          action: {
+            label: "Edit",
+            onClick: () => router.push(`/admin/products/${data.product.id}/edit`),
+          },
+        });
         router.refresh();
       } else {
         toast.error(data.error || "Failed to duplicate product");
@@ -676,16 +683,11 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
                         </Link>
                         <button
                           type="button"
-                          onClick={() => handleDuplicateProduct(p)}
-                          disabled={duplicatingId === p.id}
-                          className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                          title="Duplicate product"
+                          onClick={() => setDuplicateModalProduct(p)}
+                          className="p-1.5 text-slate-500 hover:text-[#ff6b35] hover:bg-orange-50 rounded-lg transition-colors cursor-pointer"
+                          title="Duplicate product (ডুপ্লিকেট করুন)"
                         >
-                          {duplicatingId === p.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-slate-600" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )}
+                          <Copy className="w-4 h-4" />
                         </button>
                         <button
                           type="button"
@@ -817,6 +819,15 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
                     </Link>
                     <button
                       type="button"
+                      onClick={() => setDuplicateModalProduct(p)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 hover:bg-orange-100 text-[#ff6b35] font-bold rounded-lg text-xs cursor-pointer border border-orange-200/80 transition-colors"
+                      title="Duplicate product (ডুপ্লিকেট করুন)"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleDeleteProduct(p)}
                       className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
                       title="Delete product"
@@ -830,6 +841,24 @@ export function ProductsManager({ initialCategories, initialProducts }: Products
           })
         )}
       </div>
+
+      {/* Duplicate Product Modal */}
+      <DuplicateProductModal
+        isOpen={Boolean(duplicateModalProduct)}
+        onClose={() => setDuplicateModalProduct(null)}
+        product={duplicateModalProduct}
+        onSuccess={(duplicatedProduct, shouldRedirectToEdit) => {
+          setProducts((prev) => [duplicatedProduct, ...prev]);
+          if (statusFilter === "active" && duplicatedProduct.status === "draft") {
+            setStatusFilter("all");
+          }
+          if (shouldRedirectToEdit) {
+            router.push(`/admin/products/${duplicatedProduct.id}/edit`);
+          } else {
+            router.refresh();
+          }
+        }}
+      />
     </div>
   );
 }
