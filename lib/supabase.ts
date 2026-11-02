@@ -250,6 +250,9 @@ export async function getCatalogProducts(opts?: CatalogQueryOptions): Promise<Pr
             if (typeof d.imageUrl === "string" && (d.imageUrl.startsWith("data:") || d.imageUrl.length > 2048)) {
               d.imageUrl = "";
             }
+            if (!d.created_at && r.created_at) {
+              d.created_at = r.created_at;
+            }
             return d;
           })
           .filter(Boolean);

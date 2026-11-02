@@ -2,12 +2,13 @@ import React from "react";
 import Link from "next/link";
 import { Flame, ArrowRight } from "lucide-react";
 import { supabaseCatalogService } from "@/lib/supabase";
-import { getSortedProducts, getTopSellingProducts } from "@/lib/catalog";
+import { getTopSellingProducts, getHomepageCategorySections } from "@/lib/catalog";
 import { getAllReviews } from "@/lib/db";
 import { OriginHeroSlider } from "@/components/store/origin-hero-slider";
 import { TrustBadgesMarquee } from "@/components/store/trust-badges-marquee";
 import { CategoryMarquee } from "@/components/store/category-marquee";
 import { ProductCard } from "@/components/store/product-card";
+import { HomepageCategorySections } from "@/components/store/homepage-category-sections";
 import { PromoCtaBanner } from "@/components/store/promo-cta-banner";
 import { ReviewsSection } from "@/components/store/reviews-section";
 import { WhyChooseUs } from "@/components/store/why-choose-us";
@@ -16,10 +17,11 @@ import type { ProductReview } from "@/lib/types";
 export const revalidate = 60; // Revalidate every 60s at Edge
 
 export default async function HomePage() {
-  const [settings, categories, bestSellers] = await Promise.all([
+  const [settings, categories, bestSellers, categorySections] = await Promise.all([
     supabaseCatalogService.getSettings(),
     supabaseCatalogService.getCategories(),
     getTopSellingProducts(12),
+    getHomepageCategorySections(),
   ]);
 
   // Approved customer reviews from local DB
@@ -45,48 +47,53 @@ export default async function HomePage() {
       {/* 3. Product Categories Marquee */}
       <CategoryMarquee categories={categories} />
 
-      {/* 4. Best Sellers / Hot Selling Products Grid */}
-      <section id="best-sellers" className="py-12 md:py-16 bg-white text-black font-sans">
-        <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Flame className="w-5 h-5 text-[#c2410c]" />
-                <span className="text-xs sm:text-sm font-semibold text-[#c2410c] uppercase tracking-wider">
-                  বেস্ট সেলার
-                </span>
+      {/* 4. Dynamic Category-Based Product Showcase Sections (Admin Configured) */}
+      <HomepageCategorySections sections={categorySections} />
+
+      {/* 5. Best Sellers / Hot Selling Products Grid (Shown if enabled or if no category sections selected) */}
+      {(settings.showBestSellersOnHome !== false || categorySections.length === 0) && (
+        <section id="best-sellers" className="py-12 md:py-16 bg-white text-black font-sans border-t border-slate-100">
+          <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1728px] mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Flame className="w-5 h-5 text-[#c2410c]" />
+                  <span className="text-xs sm:text-sm font-semibold text-[#c2410c] uppercase tracking-wider">
+                    বেস্ট সেলার
+                  </span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-[#111827]">
+                  আমাদের হট সেলিং পণ্যসমূহ
+                </h2>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#111827]">
-                আমাদের হট সেলিং পণ্যসমূহ
-              </h2>
+
+              <Link
+                href="/shop"
+                className="flex items-center gap-1 text-sm font-bold text-[#c2410c] hover:text-[#9a3412] transition-colors group"
+              >
+                <span>সব দেখুন</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </div>
 
-            <Link
-              href="/shop"
-              className="flex items-center gap-1 text-sm font-bold text-[#c2410c] hover:text-[#9a3412] transition-colors group"
-            >
-              <span>সব দেখুন</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            {/* Product Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 2xl:gap-6">
+              {bestSellers.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
           </div>
+        </section>
+      )}
 
-          {/* Product Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 2xl:gap-6">
-            {bestSellers.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 5. High-Converting Promo CTA Banner */}
+      {/* 6. High-Converting Promo CTA Banner */}
       <PromoCtaBanner settings={settings} />
 
-      {/* 6. Customer Reviews Section */}
+      {/* 7. Customer Reviews Section */}
       <ReviewsSection reviews={reviews} />
 
-      {/* 7. Why Choose Us Section */}
+      {/* 8. Why Choose Us Section */}
       <WhyChooseUs />
     </div>
   );

@@ -376,4 +376,6 @@ export const defaultSettings: import("@/lib/types").SiteSettings = {
   shippingInsideDhaka: 60,
   shippingOutsideDhaka: 130,
   themeColor: "gradient:#ff804e,#ff6b35,light",
+  homepageCategorySlugs: [],
+  showBestSellersOnHome: true,
 };

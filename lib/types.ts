@@ -151,6 +151,8 @@ export type SiteSettings = {
   shippingOutsideDhaka?: number | string;
   themeColor?: string;
   category_product_orders?: Record<string, string[]>;
+  homepageCategorySlugs?: string[];
+  showBestSellersOnHome?: boolean;
 };
 
 export type LandingPageStatus = "published" | "draft";

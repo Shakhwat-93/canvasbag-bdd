@@ -136,7 +136,7 @@ export async function getNewArrivals(limit = 8): Promise<Product[]> {
 /**
  * Helper to extract timestamp from IDs like 'prod-1780987405757'
  */
-function extractTimestampFromId(id: string): number {
+export function extractTimestampFromId(id: string): number {
   const match = id.match(/\d{10,13}/);
   if (match) {
     const num = Number(match[0]);
@@ -144,6 +144,87 @@ function extractTimestampFromId(id: string): number {
     if (num > 100000000) return num * 1000; // 10-digit s
   }
   return 0;
+}
+
+/**
+ * Helper to safely resolve a product's true creation timestamp
+ */
+export function getProductCreatedAtTime(p: Product): number {
+  if (p.created_at) {
+    const t = new Date(p.created_at).getTime();
+    if (!isNaN(t) && t > 0) return t;
+  }
+  const idTime = extractTimestampFromId(p.id);
+  if (idTime > 0) return idTime;
+  return 0;
+}
+
+export interface HomepageCategorySection {
+  category: Category;
+  products: Product[];
+}
+
+/**
+ * Get dynamic category-based homepage sections sorted by created_at DESC
+ */
+export async function getHomepageCategorySections(): Promise<HomepageCategorySection[]> {
+  const [products, categories, settings] = await Promise.all([
+    supabaseCatalogService.getCatalogProducts(),
+    supabaseCatalogService.getCategories(),
+    supabaseCatalogService.getSettings(),
+  ]);
+
+  const selectedSlugs = settings.homepageCategorySlugs || [];
+  if (!Array.isArray(selectedSlugs) || selectedSlugs.length === 0) {
+    return [];
+  }
+
+  const activeProducts = products.filter(
+    (p) => p.status !== "inactive" && p.status !== "draft"
+  );
+
+  const sections: HomepageCategorySection[] = [];
+
+  for (const slug of selectedSlugs) {
+    const category = categories.find((c) => c.slug === slug || c.id === slug);
+    if (!category) continue;
+
+    // Collect target slug and all descendant slugs for rollup support
+    const matchingSlugs = getCategoryDescendantSlugs(category.slug, categories);
+
+    const categoryProducts = activeProducts.filter((p) => {
+      const pSlug = p.categorySlug || (p as any).category_slug;
+      if (matchingSlugs.includes(pSlug)) return true;
+      if (p.categoryId) {
+        const cat = categories.find((c) => c.id === p.categoryId);
+        if (cat && matchingSlugs.includes(cat.slug)) return true;
+      }
+      if (Array.isArray(p.additionalCategorySlugs)) {
+        return p.additionalCategorySlugs.some((s) => matchingSlugs.includes(s));
+      }
+      return false;
+    });
+
+    // STRICT REQUIREMENT: Sort by created_at DESC (Most Recent First)
+    categoryProducts.sort((a, b) => {
+      const timeA = getProductCreatedAtTime(a);
+      const timeB = getProductCreatedAtTime(b);
+      return timeB - timeA;
+    });
+
+    // Take at most 4 latest products
+    const latestProducts = categoryProducts.slice(0, 4);
+
+    // If a selected category has no active products, handle gracefully
+    if (latestProducts.length > 0) {
+      sections.push({
+        category,
+        products: latestProducts,
+      });
+    }
+  }
+
+  return sections;
 }
 
 /**
