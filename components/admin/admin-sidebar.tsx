@@ -19,6 +19,7 @@ import {
   ExternalLink,
   Sparkles,
   LogOut,
+  FileCode2,
 } from "lucide-react";
 import { AdminSignoutButton } from "@/components/admin/admin-signout-button";
 
@@ -118,6 +119,12 @@ export function AdminSidebar({
     {
       title: "MARKETING & ANALYTICS",
       items: [
+        {
+          label: "Meta Catalog Feed",
+          href: "/admin/meta-catalog",
+          icon: FileCode2,
+          isActive: (path) => path.startsWith("/admin/meta-catalog"),
+        },
         {
           label: "Analytics & Tracking",
           href: "/admin/settings#analytics",

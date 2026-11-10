@@ -111,9 +111,12 @@ export async function revalidateCatalog(scope: "all" | "settings" | "products" |
     if (scope === "landing-pages" || scope === "all") {
       safeRevalidateTag("cb-landing-pages");
     }
+    safeRevalidateTag("cb-meta-catalog");
     revalidatePath("/", "layout");
     revalidatePath("/");
     revalidatePath("/shop");
+    revalidatePath("/facebook-catalog.xml");
+    revalidatePath("/admin/meta-catalog");
   } catch (e) {
     // Non-fatal if invoked outside Next.js request context
   }

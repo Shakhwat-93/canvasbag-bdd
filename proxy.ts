@@ -6,6 +6,11 @@ export function proxy(request: NextRequest) {
   const host = request.headers.get("host") || "";
   const cleanHost = host.split(":")[0].toLowerCase();
 
+  // 0. Public Meta Product Catalog XML Feed must bypass auth and domain rewrites
+  if (pathname === "/facebook-catalog.xml") {
+    return NextResponse.next();
+  }
+
   // 1. Protect /admin routes
   if (pathname.startsWith("/admin")) {
     const isLoginPage = pathname === "/admin/login";
@@ -64,6 +69,6 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path*",
-    "/((?!api|_next/static|_next/image|brand|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api|_next/static|_next/image|brand|favicon.ico|facebook-catalog\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

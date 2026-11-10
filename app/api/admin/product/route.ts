@@ -158,6 +158,7 @@ export async function POST(req: NextRequest) {
       rating: computedRating,
       reviewCount: computedReviewCount,
       created_at: created_at || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     const savedProduct = await supabaseCatalogService.upsertProduct(id, productData);

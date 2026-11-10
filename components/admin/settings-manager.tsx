@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Save,
@@ -34,17 +35,30 @@ import {
   ArrowDown,
   Search,
   X,
+  FileCode2,
+  Copy,
+  Download,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { SiteSettings, Category } from "@/lib/types";
+import type { CatalogValidationReport } from "@/lib/meta-catalog";
 import { MediaPickerModal } from "@/components/admin/media-picker-modal";
 
 interface SettingsManagerProps {
   initialSettings: SiteSettings;
   categories?: Category[];
+  metaCatalogReport?: CatalogValidationReport;
 }
 
-export function SettingsManager({ initialSettings, categories = [] }: SettingsManagerProps) {
+export function SettingsManager({
+  initialSettings,
+  categories = [],
+  metaCatalogReport: initialMetaReport,
+}: SettingsManagerProps) {
   const router = useRouter();
   const [settings, setSettings] = useState<SiteSettings>({
     ...initialSettings,
@@ -59,6 +73,9 @@ export function SettingsManager({ initialSettings, categories = [] }: SettingsMa
     showBestSellersOnHome: initialSettings.showBestSellersOnHome ?? true,
   });
   const [categorySearch, setCategorySearch] = useState("");
+  const [metaReport, setMetaReport] = useState<CatalogValidationReport | undefined>(initialMetaReport);
+  const [copiedFeedUrl, setCopiedFeedUrl] = useState(false);
+  const [syncingMetaFeed, setSyncingMetaFeed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
@@ -200,6 +217,41 @@ export function SettingsManager({ initialSettings, categories = [] }: SettingsMa
       (cat.description && cat.description.toLowerCase().includes(q))
     );
   });
+
+  const handleCopyMetaFeedUrl = async () => {
+    const feedUrl = metaReport?.feedUrl || "https://canvasbagbd.com/facebook-catalog.xml";
+    try {
+      await navigator.clipboard.writeText(feedUrl);
+      setCopiedFeedUrl(true);
+      setTimeout(() => setCopiedFeedUrl(false), 2000);
+      toast.success("Meta Catalog Feed URL copied!");
+    } catch {
+      toast.error("Failed to copy URL");
+    }
+  };
+
+  const handleRefreshMetaCatalog = async () => {
+    setSyncingMetaFeed(true);
+    try {
+      const res = await fetch("/api/admin/meta-catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.report) {
+        setMetaReport(data.report);
+        toast.success(
+          `Catalog validated: ${data.report.totalFeedItems} XML items synced`
+        );
+      } else {
+        toast.error(data.error || "Failed to validate feed");
+      }
+    } catch {
+      toast.error("Failed to validate feed");
+    } finally {
+      setSyncingMetaFeed(false);
+    }
+  };
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1225,7 +1277,7 @@ export function SettingsManager({ initialSettings, categories = [] }: SettingsMa
       {/* ────────────────────────────────────────────────────────
           SECTION 4: ANALYTICS & CONVERSION TRACKING
          ──────────────────────────────────────────────────────── */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+      <div id="analytics" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
         <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
           <BarChart className="w-4 h-4 text-[#ff6b35]" />
           <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-900">
@@ -1290,6 +1342,177 @@ export function SettingsManager({ initialSettings, categories = [] }: SettingsMa
           </div>
         </div>
       </div>
+
+      {/* ────────────────────────────────────────────────────────
+          SECTION 5: META PRODUCT CATALOG (FACEBOOK & INSTAGRAM XML FEED)
+         ──────────────────────────────────────────────────────── */}
+      {metaReport && (
+        <div id="meta-catalog" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div className="flex items-start gap-2.5">
+              <span className="w-2 h-6 bg-[#ff6b35] rounded-full mt-0.5" />
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                    <FileCode2 className="w-4 h-4 text-[#ff6b35]" />
+                    Meta Product Catalog (Facebook &amp; Instagram XML Feed)
+                  </h2>
+                  <span
+                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      metaReport.isValidXml && metaReport.errors.length === 0
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : metaReport.isValidXml
+                        ? "bg-amber-50 text-amber-700 border-amber-200"
+                        : "bg-red-50 text-red-700 border-red-200"
+                    }`}
+                  >
+                    {metaReport.isValidXml ? (
+                      <CheckCircle2 className="w-3 h-3" />
+                    ) : (
+                      <XCircle className="w-3 h-3" />
+                    )}
+                    {metaReport.isValidXml ? "Valid RSS 2.0 XML" : "Validation Errors"}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Auto-synchronized product catalog endpoint for Facebook &amp; Instagram Shops, Dynamic Ads, and Commerce Manager
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleRefreshMetaCatalog}
+                disabled={syncingMetaFeed}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold cursor-pointer disabled:opacity-50 transition-all"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${syncingMetaFeed ? "animate-spin" : ""}`} />
+                {syncingMetaFeed ? "Syncing..." : "Re-Validate"}
+              </button>
+              <Link
+                href="/admin/meta-catalog"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all"
+              >
+                <span>Open Catalog Inspector</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Key Feed Metrics */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                Total Products in Feed
+              </span>
+              <span className="text-2xl font-black text-slate-900 mt-1 block">
+                {metaReport.totalFeedItems}
+              </span>
+              <span className="text-[11px] text-slate-500">
+                {metaReport.publishedParentProducts} products ({metaReport.unpublishedExcludedCount} unpublished hidden)
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-200/70">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">
+                Active Products
+              </span>
+              <span className="text-2xl font-black text-emerald-700 mt-1 block">
+                {metaReport.activeInStockCount}
+              </span>
+              <span className="text-[11px] text-emerald-700/80">In stock &amp; published</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-amber-50/50 border border-amber-200/70">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 block">
+                Out of Stock Products
+              </span>
+              <span className="text-2xl font-black text-slate-900 mt-1 block">
+                {metaReport.outOfStockCount}
+              </span>
+              <span className="text-[11px] text-slate-500">Live variant inventory sync</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                Last Feed Update
+              </span>
+              <span
+                className="text-xs font-extrabold text-slate-900 mt-1.5 block leading-snug"
+                suppressHydrationWarning
+              >
+                {new Intl.DateTimeFormat("en-US", {
+                  timeZone: "Asia/Dhaka",
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }).format(new Date(metaReport.lastFeedUpdate))}{" "}
+                (BDT)
+              </span>
+              <span className="text-[11px] text-slate-500 mt-0.5 block">
+                {(metaReport.xmlBytes / 1024).toFixed(1)} KB UTF-8 XML
+              </span>
+            </div>
+          </div>
+
+          {/* Feed URL + Copy + Download XML */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-700 block">Feed URL</label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                readOnly
+                aria-label="Meta Catalog Feed URL"
+                value={metaReport.feedUrl}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+                className="flex-1 h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 font-mono text-xs font-bold text-slate-900"
+              />
+              <button
+                type="button"
+                onClick={handleCopyMetaFeedUrl}
+                className="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold cursor-pointer shrink-0 transition-all"
+              >
+                {copiedFeedUrl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedFeedUrl ? "Copied!" : "Copy Feed URL"}
+              </button>
+              <a
+                href="/facebook-catalog.xml?download=1&fresh=1"
+                download="facebook-catalog.xml"
+                className="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl bg-[#ff6b35] hover:bg-[#e55520] text-white text-xs font-bold shrink-0 transition-all"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download XML
+              </a>
+            </div>
+          </div>
+
+          {/* Validation / Error Report Summary */}
+          <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              {metaReport.errors.length === 0 ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              )}
+              <span className="font-semibold text-slate-700">
+                Feed Validation Report:{" "}
+                <strong className="text-slate-900">
+                  {metaReport.checks.filter((c) => c.passed).length}/{metaReport.checks.length} checks passed
+                </strong>{" "}
+                • {metaReport.errors.length} errors • {metaReport.warnings.length} warnings
+              </span>
+            </div>
+            <Link
+              href="/admin/meta-catalog"
+              className="text-xs font-bold text-[#c2410c] hover:underline shrink-0"
+            >
+              View Full Validation Report &amp; Feed Items →
+            </Link>
+          </div>
+        </div>
+      )}
     </form>
 
     <MediaPickerModal

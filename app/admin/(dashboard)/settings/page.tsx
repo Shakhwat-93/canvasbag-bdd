@@ -1,5 +1,6 @@
 import React from "react";
-import { getCatalogSettings, getCatalogCategories } from "@/lib/supabase";
+import { getCatalogSettings, getCatalogCategories, getCatalogProducts } from "@/lib/supabase";
+import { buildMetaCatalogFeed } from "@/lib/meta-catalog";
 import { SettingsManager } from "@/components/admin/settings-manager";
 
 export const dynamic = "force-dynamic";
@@ -10,10 +11,23 @@ export const metadata = {
 };
 
 export default async function AdminSettingsPage() {
-  const [settings, categories] = await Promise.all([
+  const [settings, categories, products] = await Promise.all([
     getCatalogSettings({ forceFresh: true }),
     getCatalogCategories({ forceFresh: true }),
+    getCatalogProducts({ forceFresh: true }),
   ]);
 
-  return <SettingsManager initialSettings={settings} categories={categories} />;
+  const { report: metaCatalogReport } = buildMetaCatalogFeed({
+    products,
+    categories,
+    settings,
+  });
+
+  return (
+    <SettingsManager
+      initialSettings={settings}
+      categories={categories}
+      metaCatalogReport={metaCatalogReport}
+    />
+  );
 }
