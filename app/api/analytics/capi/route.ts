@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendMetaServerEvent } from "@/lib/meta-capi";
+import { sendTikTokServerEvent } from "@/lib/tiktok-capi";
 
 // Server-side memory cache for duplicate CAPI request suppression (TTL: 60s)
 const processedServerEvents = new Map<string, number>();
@@ -56,6 +57,9 @@ export async function POST(req: NextRequest) {
       shouldSetFbpCookie = true;
     }
     const fbc = req.cookies.get("_fbc")?.value || userData.fbc;
+    const ttp = req.cookies.get("_ttp")?.value || userData.ttp;
+    const ttclid = req.cookies.get("_ttclid")?.value || userData.ttclid;
+    const ttTestCode = body.ttTestCode || undefined;
 
     // 2. High-frequency PageView burst suppression (e.g. from rapid reloads, concurrent tabs, or hydration double-fires)
     if (eventName === "PageView") {
@@ -75,16 +79,37 @@ export async function POST(req: NextRequest) {
       userAgent: userData.userAgent || userAgent,
       fbp,
       fbc,
+      ttp,
+      ttclid,
     };
 
-    const success = await sendMetaServerEvent({
-      eventName,
-      eventId,
-      eventSourceUrl: eventSourceUrl || req.headers.get("referer") || "https://canvasbagbd.com",
-      testCode,
-      userData: mergedUserData,
-      customData,
-    });
+    const resolvedSourceUrl =
+      eventSourceUrl || req.headers.get("referer") || "https://canvasbagbd.com";
+
+    const [metaResult] = await Promise.allSettled([
+      sendMetaServerEvent({
+        eventName,
+        eventId,
+        eventSourceUrl: resolvedSourceUrl,
+        testCode,
+        userData: mergedUserData,
+        customData,
+      }),
+      ...(eventName !== "PageView"
+        ? [
+            sendTikTokServerEvent({
+              eventName,
+              eventId,
+              eventSourceUrl: resolvedSourceUrl,
+              testCode: ttTestCode,
+              userData: mergedUserData,
+              customData,
+            }),
+          ]
+        : []),
+    ]);
+
+    const success = metaResult.status === "fulfilled" ? metaResult.value : false;
 
     const response = NextResponse.json({ success });
     if (shouldSetFbpCookie) {

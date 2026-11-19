@@ -1340,6 +1340,39 @@ export function SettingsManager({
               className="w-full h-10 px-3 mt-1.5 rounded-xl border border-slate-200 text-xs font-mono font-bold bg-white shadow-2xs"
             />
           </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700">TikTok Pixel ID</label>
+            <input
+              type="text"
+              value={settings.tiktokPixelId ?? ""}
+              onChange={(e) => setSettings({ ...settings, tiktokPixelId: e.target.value })}
+              placeholder="DBVJMJJC77U7CBT6B0U0"
+              className="w-full h-10 px-3 mt-1.5 rounded-xl border border-slate-200 text-xs font-mono font-bold bg-white shadow-2xs"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700">TikTok Test Event Code</label>
+            <input
+              type="text"
+              value={settings.tiktokTestCode ?? ""}
+              onChange={(e) => setSettings({ ...settings, tiktokTestCode: e.target.value })}
+              placeholder="TEST50481"
+              className="w-full h-10 px-3 mt-1.5 rounded-xl border border-slate-200 text-xs font-mono font-bold bg-white shadow-2xs"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700">TikTok Events API Access Token</label>
+            <input
+              type="password"
+              value={settings.tiktokAccessToken ?? ""}
+              onChange={(e) => setSettings({ ...settings, tiktokAccessToken: e.target.value })}
+              placeholder="TikTok Events API token..."
+              className="w-full h-10 px-3 mt-1.5 rounded-xl border border-slate-200 text-xs font-mono font-bold bg-white shadow-2xs"
+            />
+          </div>
         </div>
       </div>
 

@@ -39,6 +39,15 @@ export async function POST(req: NextRequest) {
       const match = String(settings.pixelId).match(/\d{10,25}/);
       settings.pixelId = match ? match[0] : String(settings.pixelId).trim();
     }
+    if (settings.tiktokPixelId !== undefined) {
+      settings.tiktokPixelId = String(settings.tiktokPixelId).trim().toUpperCase();
+    }
+    if (settings.tiktokTestCode !== undefined) {
+      settings.tiktokTestCode = String(settings.tiktokTestCode).trim();
+    }
+    if (settings.tiktokAccessToken !== undefined) {
+      settings.tiktokAccessToken = String(settings.tiktokAccessToken).trim();
+    }
 
     const current = await supabaseCatalogService.getSettings({ forceFresh: true });
     const merged = { ...current, ...settings };

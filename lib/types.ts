@@ -141,6 +141,9 @@ export type SiteSettings = {
   pixelId?: string;
   fbAccessToken?: string;
   fbTestCode?: string;
+  tiktokPixelId?: string;
+  tiktokAccessToken?: string;
+  tiktokTestCode?: string;
   whatsappNumber?: string;
   messengerUsername?: string;
   phone?: string;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseCatalogService, supabaseOrdersService } from "@/lib/supabase";
 import { insertLocalOrder } from "@/lib/db";
 import { sendMetaPurchaseEvent } from "@/lib/meta-capi";
+import { sendTikTokPurchaseEvent } from "@/lib/tiktok-capi";
 import { isValidBDPhone } from "@/lib/format";
 import type { CartItem, LocalOrder } from "@/lib/types";
 
@@ -267,22 +268,41 @@ export async function POST(req: NextRequest) {
     try {
       const userAgent = req.headers.get("user-agent") || undefined;
       const origin = req.headers.get("origin") || req.headers.get("referer") || process.env.NEXT_PUBLIC_APP_URL || "https://canvasbagbd.com";
-      await sendMetaPurchaseEvent(
-        {
-          ...localOrder,
-          fullUrl: `${origin.replace(/\/$/, "")}/checkout`,
-        },
-        items,
-        {
-          ip,
-          userAgent,
-          fbp,
-          fbc,
-          testCode,
-        }
-      );
+      const ttp = req.cookies.get("_ttp")?.value || body.ttp;
+      const ttclid = req.cookies.get("_ttclid")?.value || body.ttclid;
+      const fullCheckoutUrl = `${origin.replace(/\/$/, "")}/checkout`;
+
+      await Promise.allSettled([
+        sendMetaPurchaseEvent(
+          {
+            ...localOrder,
+            fullUrl: fullCheckoutUrl,
+          },
+          items,
+          {
+            ip,
+            userAgent,
+            fbp,
+            fbc,
+            testCode,
+          }
+        ),
+        sendTikTokPurchaseEvent(
+          {
+            ...localOrder,
+            fullUrl: fullCheckoutUrl,
+          },
+          items,
+          {
+            ip,
+            userAgent,
+            ttp,
+            ttclid,
+          }
+        ),
+      ]);
     } catch (e) {
-      console.warn("[Meta CAPI Error]", e);
+      console.warn("[Analytics CAPI Error]", e);
     }
 
     const response = NextResponse.json(

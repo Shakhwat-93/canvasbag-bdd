@@ -5,7 +5,15 @@ declare global {
     dataLayer?: any[];
     gtag?: (...args: any[]) => void;
     fbq?: (...args: any[]) => void;
+    ttq?: {
+      page: () => void;
+      track: (event: string, payload?: Record<string, any>, options?: Record<string, any>) => void;
+      identify: (payload: Record<string, any>) => void;
+      [key: string]: any;
+    };
     fbTestCode?: string;
+    ttTestCode?: string;
+    _ttPixelId?: string;
     userIp?: string;
   }
 }
@@ -13,6 +21,7 @@ declare global {
 // In-memory deduplication registry
 const lastFiredEvents: Record<string, number> = {};
 const firedFbqEventIds = new Set<string>();
+const firedTtqEventIds = new Set<string>();
 const firedCapiEventIds = new Set<string>();
 
 const META_STANDARD_EVENTS = new Set([
@@ -92,6 +101,93 @@ function safeFbqTrack(
 }
 
 /**
+ * Safe TikTok Pixel (ttq) PageView invoker.
+ */
+function safeTtqPage() {
+  if (typeof window === "undefined" || !window._ttPixelId) return;
+  let attempts = 0;
+  const maxAttempts = 15;
+
+  const executePage = () => {
+    if (window.ttq && typeof window.ttq.page === "function") {
+      try {
+        window.ttq.page();
+        console.log(
+          "%c[TikTok Pixel Browser] Tracked Pageview",
+          "color: #000000; background: #25F4EE; font-weight: bold; padding: 1px 4px; border-radius: 3px;"
+        );
+      } catch (err) {
+        console.warn("[TikTok Pixel Browser] Error firing Pageview:", err);
+      }
+    } else if (attempts < maxAttempts) {
+      attempts++;
+      setTimeout(executePage, 200);
+    }
+  };
+
+  executePage();
+}
+
+/**
+ * Safe TikTok Pixel (ttq) standard event invoker with event_id deduplication.
+ */
+function safeTtqTrack(
+  eventName: string,
+  payload: Record<string, any> = {},
+  eventId?: string,
+  userPhone?: string
+) {
+  if (typeof window === "undefined" || !window._ttPixelId) return;
+
+  if (eventId) {
+    const ttDedupeKey = `${eventName}_${eventId}`;
+    if (firedTtqEventIds.has(ttDedupeKey)) {
+      console.log(`[TikTok Pixel Browser] Skipped duplicate event_id: ${eventId}`);
+      return;
+    }
+    firedTtqEventIds.add(ttDedupeKey);
+  }
+
+  let attempts = 0;
+  const maxAttempts = 15;
+
+  const executeTrack = () => {
+    if (window.ttq && typeof window.ttq.track === "function") {
+      try {
+        if (userPhone && typeof window.ttq.identify === "function") {
+          const digits = userPhone.replace(/\D/g, "");
+          let e164 = "";
+          if (digits.length === 11 && digits.startsWith("01")) e164 = `+88${digits}`;
+          else if (digits.length === 13 && digits.startsWith("8801")) e164 = `+${digits}`;
+          else if (digits.length >= 10) e164 = `+${digits}`;
+          if (e164) {
+            window.ttq.identify({ phone_number: e164 });
+          }
+        }
+        if (eventId) {
+          window.ttq.track(eventName, payload, { event_id: eventId });
+        } else {
+          window.ttq.track(eventName, payload);
+        }
+        console.log(
+          `%c[TikTok Pixel Browser] Tracked ${eventName}`,
+          "color: #000000; background: #25F4EE; font-weight: bold; padding: 1px 4px; border-radius: 3px;",
+          payload,
+          eventId ? { event_id: eventId } : undefined
+        );
+      } catch (err) {
+        console.warn(`[TikTok Pixel Browser] Error firing ${eventName}:`, err);
+      }
+    } else if (attempts < maxAttempts) {
+      attempts++;
+      setTimeout(executeTrack, 200);
+    }
+  };
+
+  executeTrack();
+}
+
+/**
  * Safe gtag invoker that queues events into window.dataLayer
  * even before gtag.js script finishes downloading.
  */
@@ -154,21 +250,29 @@ async function dispatchServerEvent(params: {
     };
     const clientFbp = getCookie("_fbp");
     const clientFbc = getCookie("_fbc");
+    const clientTtp = getCookie("_ttp");
+    const clientTtclid =
+      (typeof sessionStorage !== "undefined" ? sessionStorage.getItem("ttclid") : null) ||
+      getCookie("_ttclid") ||
+      undefined;
     const testCode =
       (typeof sessionStorage !== "undefined" ? sessionStorage.getItem("fb_test_code") : null) ||
       getCookie("fb_test_code") ||
       undefined;
+    const ttTestCode = window.ttTestCode || undefined;
 
     const mergedUserData = {
       fbp: clientFbp,
       fbc: clientFbc,
+      ttp: clientTtp,
+      ttclid: clientTtclid,
       ...params.userData,
     };
 
     fetch("/api/analytics/capi", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...params, userData: mergedUserData, testCode }),
+      body: JSON.stringify({ ...params, userData: mergedUserData, testCode, ttTestCode }),
       keepalive: true,
     }).catch((err) => {
       console.warn("[Analytics] CAPI background dispatch failed:", err);
@@ -218,7 +322,10 @@ export function trackPageView(pagePath?: string) {
   const eventId = `pv_${now}_${Math.random().toString(36).substring(2, 7)}`;
   safeFbqTrack("PageView", {}, { eventID: eventId });
 
-  // 4. Meta Conversions API (Server-Side)
+  // 4. TikTok Pixel (ttq) Browser PageView
+  safeTtqPage();
+
+  // 5. Meta Conversions API (Server-Side)
   dispatchServerEvent({
     eventName: "PageView",
     eventId,
@@ -407,7 +514,32 @@ export function trackClientEvent(name: string, payload: Record<string, any> = {}
     // 1. Fire Client Browser Pixel with single matching eventID
     safeFbqTrack(pixelName, pixelPayload, eventOptions);
 
-    // 2. Fire Server-Side Conversions API (CAPI) for non-purchase events
+    // 2. Fire TikTok Browser Pixel (ttq) for standard TikTok e-commerce events
+    const ttEventMap: Record<string, string> = {
+      view_item: "ViewContent",
+      add_to_cart: "AddToCart",
+      begin_checkout: "InitiateCheckout",
+      purchase: "CompletePayment",
+    };
+    const ttEventName = ttEventMap[name];
+    if (ttEventName) {
+      const ttContents = rawItems.map((i: any) => ({
+        content_id: String(i.item_id || i.id || ""),
+        content_type: "product",
+        content_name: i.item_name || i.name || contentName || "Canvas Bag",
+        quantity: Number(i.quantity || 1),
+        price: Number(i.price || 0),
+      }));
+      const ttPayload: Record<string, any> = {
+        contents: ttContents,
+        content_type: "product",
+        value: Number(payload.value || 0),
+        currency: "BDT",
+      };
+      safeTtqTrack(ttEventName, ttPayload, eventId, payload.user_data?.phone_number);
+    }
+
+    // 3. Fire Server-Side Conversions APIs (Meta CAPI + TikTok Events API) for non-purchase events
     // (Purchase CAPI is directly handled on the backend during order creation in /api/checkout)
     if (name !== "purchase") {
       dispatchServerEvent({

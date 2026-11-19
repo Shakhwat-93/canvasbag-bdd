@@ -13,11 +13,16 @@ function NavigationTrackerInner() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // 1. Capture test code from URL without affecting route deduplication
+    // 1. Capture test code & TikTok click ID (ttclid) from URL without affecting route deduplication
     const tc = searchParams?.get("test_event_code") || searchParams?.get("fb_test_code");
     if (tc && typeof window !== "undefined") {
       sessionStorage.setItem("fb_test_code", tc.trim());
       document.cookie = `fb_test_code=${encodeURIComponent(tc.trim())}; path=/; max-age=7200; SameSite=Lax`;
+    }
+    const ttclid = searchParams?.get("ttclid");
+    if (ttclid && typeof window !== "undefined") {
+      sessionStorage.setItem("ttclid", ttclid.trim());
+      document.cookie = `_ttclid=${encodeURIComponent(ttclid.trim())}; path=/; max-age=2592000; SameSite=Lax`;
     }
 
     // 2. Deduplicate strictly by pathname with global lock to avoid double firing when query params change or hydrate

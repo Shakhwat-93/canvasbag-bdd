@@ -79,6 +79,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const ga4Id = (settings.ga4Id || process.env.GA4_MEASUREMENT_ID || "G-KF0PE2GR6K").trim();
   const pixelId = (settings.pixelId || process.env.FACEBOOK_PIXEL_ID || "1614327189772228").trim();
   const fbTestCode = (settings.fbTestCode?.trim() || process.env.FACEBOOK_TEST_EVENT_CODE || "").trim();
+  const tiktokPixelId = (
+    settings.tiktokPixelId !== undefined
+      ? settings.tiktokPixelId
+      : process.env.TIKTOK_PIXEL_ID || "DBVJMJJC77U7CBT6B0U0"
+  ).trim();
+  const tiktokTestCode = (
+    settings.tiktokTestCode !== undefined
+      ? settings.tiktokTestCode
+      : process.env.TIKTOK_TEST_EVENT_CODE || "TEST50481"
+  ).trim();
   const savedTheme = settings.themeColor || "gradient:#ff804e,#ff6b35,light";
 
   const { primary, gradient, foreground } = getThemeStyles(savedTheme);
@@ -155,6 +165,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               window.gtag = window.gtag || function(){window.dataLayer.push(arguments);};
               window.fbTestCode = "${fbTestCode}";
               window._fbPixelId = "${pixelId}";
+              window.ttTestCode = "${tiktokTestCode}";
+              window._ttPixelId = "${tiktokPixelId}";
               ${
                 pixelId
                   ? `
@@ -189,6 +201,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               }(window, document,'script', 'https://connect.facebook.net/en_US/fbevents.js');
               fbq('set', 'autoConfig', false, '${pixelId}');
               fbq('init', '${pixelId}');
+              `
+                  : ""
+              }
+              ${
+                tiktokPixelId
+                  ? `
+              !function (w, d, t) {
+                if (w.__cb_ttq_loaded) return;
+                w.__cb_ttq_loaded = true;
+                w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script");n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+                ttq.load('${tiktokPixelId}');
+              }(window, document, 'ttq');
               `
                   : ""
               }
