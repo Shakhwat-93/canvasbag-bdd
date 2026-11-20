@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { getCatalogSettings } from "@/lib/supabase";
 
 const DEFAULT_TIKTOK_PIXEL_ID = "DBVJMJJC77U7CBT6B0U0";
-const DEFAULT_TIKTOK_ACCESS_TOKEN = "f9f0781c2ea110e9badf4e92d34cbc3e800641b6";
+const DEFAULT_TIKTOK_ACCESS_TOKEN = "f293c338c82b3d4d317e6e1fb05b9f1500100ea6";
 const DEFAULT_TIKTOK_TEST_CODE = "TEST50481";
 
 function sha256(val?: string | null): string | null {

@@ -372,7 +372,7 @@ export const defaultSettings: import("@/lib/types").SiteSettings = {
   fbAccessToken: "EAA9aZA7khMiYBSZAjid32RiNRFJrtCJa3XhQDXpfzVVYLWNrFZCOS7cxslQlhCNHgepBkvcrr85ZBnKQdyoqaupbVLqZBmuK0ZBqIyN5XasKrvII2kZBdoCuwXvDYfFE1PNuUdaI6wj2tyKcKaIgqLdp1ZAZB6Op8vSTrUjwxXSnqGEecXH7a5lMpEY7kTgm95gZDZD",
   fbTestCode: "",
   tiktokPixelId: "DBVJMJJC77U7CBT6B0U0",
-  tiktokAccessToken: "f9f0781c2ea110e9badf4e92d34cbc3e800641b6",
+  tiktokAccessToken: "f293c338c82b3d4d317e6e1fb05b9f1500100ea6",
   tiktokTestCode: "TEST50481",
   duplicateBlockHours: 6,
   heroMobileFourCards: true,
