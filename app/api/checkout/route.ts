@@ -154,7 +154,35 @@ export async function POST(req: NextRequest) {
     const primaryProductName = `${firstDbName}${firstVariant}`;
 
     // Attribution data
-    const trafficSource = req.cookies.get("traffic_source")?.value || "organic";
+    let trafficSource = body.traffic_source || req.cookies.get("traffic_source")?.value || null;
+    const ttclid = body.ttclid || req.cookies.get("_ttclid")?.value || req.cookies.get("ttclid")?.value;
+    const fbc = body.fbc || req.cookies.get("_fbc")?.value;
+    let fbp = body.fbp || req.cookies.get("_fbp")?.value;
+    const referer = (req.headers.get("referer") || "").toLowerCase();
+
+    // Auto-detect traffic source if not explicitly set or defaulted to organic
+    if (!trafficSource || trafficSource === "organic") {
+      if (
+        ttclid ||
+        referer.includes("tiktok") ||
+        referer.includes("musically") ||
+        referer.includes("byteoversea") ||
+        referer.includes("bytedance")
+      ) {
+        trafficSource = "TikTok";
+      } else if (fbc || fbp || referer.includes("facebook.com") || referer.includes("fb.me")) {
+        trafficSource = "Facebook";
+      } else if (referer.includes("instagram.com")) {
+        trafficSource = "Instagram";
+      } else if (referer.includes("google.com")) {
+        trafficSource = "Google";
+      } else if (referer.includes("youtube.com")) {
+        trafficSource = "YouTube";
+      } else {
+        trafficSource = trafficSource || "organic";
+      }
+    }
+
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "127.0.0.1";
 
     // 1. Write to Remote Supabase Orders DB
@@ -179,7 +207,14 @@ export async function POST(req: NextRequest) {
       };
     });
 
-    const orderSource = body.source ? String(body.source).trim() : (body.lp_slug ? `Landing Page: ${body.lp_slug}` : "main website");
+    let orderSource = body.source ? String(body.source).trim() : (body.lp_slug ? `Landing Page: ${body.lp_slug}` : "main website");
+    if (trafficSource === "TikTok" && (orderSource === "main website" || !body.source)) {
+      orderSource = "TikTok";
+    } else if (trafficSource === "Facebook" && (orderSource === "main website" || !body.source)) {
+      orderSource = "Facebook";
+    } else if (trafficSource === "Instagram" && (orderSource === "main website" || !body.source)) {
+      orderSource = "Instagram";
+    }
 
     const supabaseOrderData = {
       id: orderId,
@@ -250,8 +285,6 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Dispatch Server-Side Meta CAPI Event
-    let fbp = req.cookies.get("_fbp")?.value || body.fbp;
-    const fbc = req.cookies.get("_fbc")?.value || body.fbc;
     let shouldSetFbpCookie = false;
     if (!fbp) {
       fbp = `fb.1.${Date.now()}.${Math.floor(1000000000 + Math.random() * 9000000000)}`;

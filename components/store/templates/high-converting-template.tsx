@@ -333,6 +333,15 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
     ];
 
     try {
+      const getCookie = (cname: string) => {
+        if (typeof document === "undefined") return undefined;
+        const m = document.cookie.match(new RegExp("(^|;\\s*)" + cname + "=([^;]*)"));
+        return m ? decodeURIComponent(m[2]) : undefined;
+      };
+      const ttclid = getCookie("_ttclid") || (typeof window !== "undefined" ? sessionStorage.getItem("ttclid") : undefined);
+      const storedTraffic = typeof window !== "undefined" ? (sessionStorage.getItem("traffic_source") || localStorage.getItem("traffic_source")) : undefined;
+      const trafficSource = storedTraffic || getCookie("traffic_source") || (ttclid ? "TikTok" : undefined);
+
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -347,7 +356,9 @@ export function HighConvertingTemplate({ page, products, settings }: TemplatePro
           db_product_name: cleanDbName,
           note: fullNote,
           items: cartItems,
-          source: `Landing Page: ${page.title || page.slug || page.id}`,
+          ttclid,
+          traffic_source: trafficSource,
+          source: trafficSource === "TikTok" ? "TikTok" : `Landing Page: ${page.title || page.slug || page.id}`,
           lp_slug: page.slug || page.id,
         }),
       });

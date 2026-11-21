@@ -152,10 +152,16 @@ export default function CheckoutPage() {
 
       const fbp = getClientCookie("_fbp");
       const fbc = getClientCookie("_fbc");
+      const ttclid = getClientCookie("_ttclid") || (typeof window !== "undefined" ? sessionStorage.getItem("ttclid") : undefined);
       const testEventCode =
         typeof window !== "undefined"
           ? sessionStorage.getItem("fb_test_code") || getClientCookie("fb_test_code") || undefined
           : undefined;
+
+      const storedTrafficSource = typeof window !== "undefined"
+        ? (sessionStorage.getItem("traffic_source") || localStorage.getItem("traffic_source"))
+        : undefined;
+      const trafficSource = storedTrafficSource || getClientCookie("traffic_source") || (ttclid ? "TikTok" : undefined) || (fbc || fbp ? "Facebook" : undefined);
 
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -169,6 +175,9 @@ export default function CheckoutPage() {
           items,
           fbp,
           fbc,
+          ttclid,
+          traffic_source: trafficSource,
+          source: trafficSource === "TikTok" ? "TikTok" : undefined,
           test_event_code: testEventCode,
         }),
       });
